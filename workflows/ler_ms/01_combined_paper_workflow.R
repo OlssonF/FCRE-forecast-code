@@ -32,7 +32,7 @@ forecast_horizon <- 14
 starting_date <- as_date("2020-09-25")
 #second_date <- as_date("2020-12-01") - days(days_between_forecasts)
 #starting_date <- as_date("2018-07-20")
-second_date <- as_date("2020-11-01") - days(days_between_forecasts)
+second_date <- as_date("2021-03-01") - days(days_between_forecasts)
 
 start_dates <- as_date(rep(NA, num_forecasts + 1))
 end_dates <- as_date(rep(NA, num_forecasts + 1))
