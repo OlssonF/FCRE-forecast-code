@@ -125,7 +125,7 @@ model_parameters:
       - 0
       - 0
    GOTM:                                        # GOTM specific parameters
-    surface/meteo/u10/scale_factor: 0.3
+    surface/meteo/u10/scale_factor: 1.0
     surface/fluxes/heat/scale_factor: 1.1
     turbulence/turb_param/k_min: 1.4E-7                             # minimum turbulent kinetic energy [m^2/s^2; min=0.0]
    Simstrat:                                    # Simstrat specific parameters
@@ -135,9 +135,9 @@ model_parameters:
     ModelParameters/f_wind: 0.25
     ModelParameters/freez_temp: 0.01
     ModelParameters/k_min: 1.4e-07
-    ModelParameters/p_windf: 1.6
+    ModelParameters/p_windf: 1.0
     ModelParameters/c10: 1.0
-    ModelParameters/p_sw_water: 0.55
+    ModelParameters/p_sw_water: 1.0
     ModelParameters/snow_temp: 1.39796129
     ModelParameters/wat_albedo: 0.09
     ModelParameters/beta_sol: 0.35
