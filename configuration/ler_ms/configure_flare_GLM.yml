@@ -11,22 +11,22 @@ s3:
     bucket: drivers/noaa/gefs-v12-reprocess
   analysis:
     endpoint: s3.flare-forecast.org
-    bucket: analysis/ler_ms2
+    bucket: analysis/ler_ms3
   targets:
     endpoint: s3.flare-forecast.org
-    bucket: targets/ler_ms2
+    bucket: targets/ler_ms3
   forecasts:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts/ler_ms2
+    bucket: forecasts/ler_ms3
   forecasts_parquet:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts/ler_ms2/parquet
+    bucket: forecasts/ler_ms3/parquet
   warm_start:
     endpoint: s3.flare-forecast.org
-    bucket: restart/ler_ms2
+    bucket: restart/ler_ms3
   scores:
     endpoint: s3.flare-forecast.org
-    bucket: scores/ler_ms2/parquet
+    bucket: scores/ler_ms3/parquet
 location:
    site_id: fcre
    name: Falling Creek Reservoir
