@@ -1,6 +1,9 @@
 # Script for estimatsing the  observational uncertainty
 # to be used in shadowing time
 library(tidyverse)
+library(lubridate)
+
+lake_directory <- here::here()
 
 # these are the daily targets
 targets <- readr::read_csv('https://s3.flare-forecast.org/targets/ler_ms/fcre/fcre-targets-insitu.csv') |>
@@ -37,41 +40,24 @@ mean_interday_sd <- catwalk |>
                names_prefix = 'ThermistorTemp_C_') |>
   # get the date only
   mutate(date = as_date(format(DateTime, '%Y-%m-%d')),
-         date = as_datetime(format(DateTime, '%Y-%m-%d %H')),
          depth = as.numeric(ifelse(depth == 'surface', 0, depth))) |>
   group_by(depth, date) |>
+
   # calculate the within each day/depth sd
   summarise(sd = sd(temperature, na.rm = T)) |>
-  # ggplot(aes(x=date, y= sd)) +
-  # geom_line(aes(colour = depth))
+
   # get the mean sd for each depth
   group_by(depth) |>
   summarise(mean_sd = mean(sd, na.rm = T))
+
+# Calculate the mean sd across the water column
+wc_mean_sd <- mean(mean_interday_sd$mean_sd)
 
 mean_interday_sd |>
   ggplot(aes(x=mean_sd,  y=depth)) +
   geom_point() +
-  scale_y_reverse()
-
-
-mean_interhour_sd <- catwalk |>
-  pivot_longer(-DateTime,
-               names_to = 'depth',
-               values_to = 'temperature',
-               names_prefix = 'ThermistorTemp_C_') |>
-  # get the date only
-  mutate(date = ymd_h(format(DateTime, '%Y-%m-%d %H')),
-         depth = as.numeric(ifelse(depth == 'surface', 0, depth))) |>
-  group_by(depth, date) |>
-  # calculate the within each day/depth sd
-  summarise(sd = sd(temperature, na.rm = T)) |>
-  # ggplot(aes(x=date, y= sd)) +
-  # geom_line(aes(colour = depth))
-  # get the mean sd for each depth
-  group_by(depth) |>
-  summarise(mean_sd = mean(sd, na.rm = T))
-
-mean_interhour |>
-  ggplot(aes(x=mean_sd,  y=depth)) +
-  geom_point() +
-  scale_y_reverse()
+  geom_text(aes(label = round(mean_sd, 2)), size = 4, hjust = -0.1, vjust = -0.1) +
+  geom_vline(xintercept = wc_mean_sd, ) +
+  scale_y_reverse() +
+  theme_bw() +
+  labs(x= 'Mean daily standard deviation')
