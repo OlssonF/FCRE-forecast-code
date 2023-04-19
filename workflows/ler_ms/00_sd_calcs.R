@@ -51,13 +51,14 @@ mean_interday_sd <- catwalk |>
   summarise(mean_sd = mean(sd, na.rm = T))
 
 # Calculate the mean sd across the water column
-wc_mean_sd <- mean(mean_interday_sd$mean_sd)
+wc_mean_sd <- round(mean(mean_interday_sd$mean_sd),3)
 
 mean_interday_sd |>
   ggplot(aes(x=mean_sd,  y=depth)) +
   geom_point() +
   geom_text(aes(label = round(mean_sd, 2)), size = 4, hjust = -0.1, vjust = -0.1) +
-  geom_vline(xintercept = wc_mean_sd, ) +
-  scale_y_reverse() +
+  scale_y_reverse(limits = c(8,0)) +
+  scale_x_continuous(limits = c(0,0.6)) +
   theme_bw() +
-  labs(x= 'Mean daily standard deviation')
+  labs(x= 'Mean daily standard deviation (°C)', y= 'Depth (m)',
+       caption = paste0('Note: Overall mean = ', wc_mean_sd))
