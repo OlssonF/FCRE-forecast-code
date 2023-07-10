@@ -22,6 +22,8 @@ This code reproduces figures from the Falling Creek Reservoir multi-model ensemb
 
 4. Run `03_GenerateEnsembles.R` in the `workflows/ler_ms` to generate the two multi-model ensemble forecasts
 
+5. Run `04_ScoreForecasts.R` in the `workflows/ler_ms` to score the baseline and multi-model ensemble forecasts and calculate the shadowing time for all the forecasts
+
 # Instructions for reproducing using Docker
 
 1. Download and install Docker to your computer (https://www.docker.com)
