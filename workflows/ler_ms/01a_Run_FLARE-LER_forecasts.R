@@ -12,26 +12,21 @@ Sys.setenv('AWS_DEFAULT_REGION' = 's3',
 use_s3 <- TRUE
 lake_directory <- here::here()
 starting_index <- 1
-#Pick up on 25
+
 
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
 sapply(files.sources, source)
 
 models <- c("GLM", "GOTM","Simstrat")
-#models <- c("GOTM","Simstrat")
-#models <- c("GLM")
+
 config_files <- c("configure_flare_GLM.yml","configure_flare.yml","configure_flare.yml")
-#config_files <- c("configure_flare.yml","configure_flare.yml")
 configure_run_file <- "configure_run.yml"
 config_set_name <- "ler_ms"
 
-num_forecasts <- 52*2 #* 3 - 3
-#num_forecasts <- 1#19 * 7 + 1
+num_forecasts <- 52*2
 days_between_forecasts <- 7
 forecast_horizon <- 14
 starting_date <- as_date("2020-09-25")
-#second_date <- as_date("2020-12-01") - days(days_between_forecasts)
-#starting_date <- as_date("2018-07-20")
 second_date <- as_date("2021-03-01") - days(days_between_forecasts)
 
 start_dates <- as_date(rep(NA, num_forecasts + 1))
@@ -46,11 +41,9 @@ for(i in 2:(num_forecasts+1)){
 j = 1
 sites <- "fcre"
 
-#function(i, sites, lake_directory, sim_names, config_files, )
 
 message(paste0("Running site: ", sites[j]))
 
-##'
 # Set up configurations for the data processing
 config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml", config_set_name = config_set_name)
 
@@ -64,13 +57,6 @@ FLAREr::get_git_repo(lake_directory,
                      directory = config_obs$realtime_met_station_location,
                      git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
 
-#FLAREr::get_git_repo(lake_directory,
-#                     directory = config_obs$realtime_inflow_data_location,
-#                     git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
-
-#get_git_repo(lake_directory,
-#             directory = config_obs$manual_data_location,
-#             git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
 
 #' Download files from EDI
 
@@ -234,13 +220,9 @@ for(i in starting_index:nrow(sims)){
   if(model != "GLM"){ #GOTM and Simstrat have different diagnostics
     config$output_settings$diagnostics_names <- NULL
   }
-  # if(model == "Simstrat"){  #Inflows doesn't work for Simstrat but inflows are not turned off for GLM with setting NULL
   inflow_file_names <- NULL
   outflow_file_names <- NULL
-  # }else{
-  #   inflow_file_names <- inflow_outflow_files$inflow_file_name
-  #   outflow_file_names <- inflow_outflow_files$outflow_file_name
-  # }
+
   #Run EnKF
   if(sims$model[i] != "GLM"){
     da_forecast_output <- FLARErLER::run_da_forecast_ler(states_init = init$states,
@@ -285,7 +267,6 @@ for(i in starting_index:nrow(sims)){
 
   # Save forecast
   if(sims$model[i] != "GLM"){
-    #saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
     saved_file <- FLARErLER::write_forecast_netcdf_ler(da_forecast_output = da_forecast_output,
                                                        forecast_output_directory = config$file_path$forecast_output_directory,
                                                        use_short_filename = TRUE)
