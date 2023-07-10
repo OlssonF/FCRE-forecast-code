@@ -12,7 +12,7 @@ model_id_list <- c("GLM",
 use_s3 <- TRUE
 first_date <- "2021-03-01 00:00:00"
 last_date <- "2023-02-20 00:00:00"
-start_date_list <- paste0(seq.Date(as.Date(first_date),as.Date(last_date), 7), ' 00:00:00')
+start_date_list <- seq.Date(as.Date(first_date),as.Date(last_date), 7)
 
 
 lake_directory <- here::here()
