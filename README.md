@@ -8,21 +8,25 @@ This code reproduces figures from the Falling Creek Reservoir multi-model ensemb
 
 2.  Run `install_packages.R` in the `workflows/ler_ms` folder to download GLM and FLARE packages and their dependencies
 
-3.  Run `05_ManuscriptPlots.R` script in the `workflows/ler_ms` folder to reproduce manuscript and supplemental figures
+3.  Run `download_scores.R` in the `workflows/ler_ms` folder to download driver data, forecasts, and scores from Zenodo
+
+4.  Run `04_ManuscriptPlots.R` script in the `workflows/ler_ms` folder to reproduce manuscript and supplemental figures
 
 # Instructions to reproduce FLARE forecasts and scores:
 
 1.  Run `install_packages.R` in the `workflows/ler_ms` folder to download the LER and FLARE packages and their dependencies
 
-2.  Run `01_combined_paper_workflows.R` in the `workflows/ler_ms` folder to iteratively generate forecasts from the process LER models within FLARE for every forecast date in the forecast period
+2.  Run `01a_Run_FLARE-LER_forecasts.R` in the `workflows/ler_ms` folder to iteratively generate forecasts from the process LER models within FLARE for every forecast date in the forecast period
 
-    **Note** Running weekly forecasts for two years and all three models will take \> 4 days.
+    **Note** Running weekly forecasts for two years and all three models will take \> 4-5 days.
 
-3. Run `02_RunForecasts.R` in the `workflows/ler_ms` to generate the baseline empirical models and write the individual model forecasts to a parquet database
+3. Run `01b_Run_baseline_forecasts.R` in the `workflows/ler_ms` to generate the baseline empirical models and write the individual model forecasts to a parquet database
 
-4. Run `03_GenerateEnsembles.R` in the `workflows/ler_ms` to generate the two multi-model ensemble forecasts
+4. Run `02_GenerateEnsembles.R` in the `workflows/ler_ms` to generate the two multi-model ensemble forecasts
 
-5. Run `04_ScoreForecasts.R` in the `workflows/ler_ms` to score the baseline and multi-model ensemble forecasts and calculate the shadowing time for all the forecasts
+5. Run `03_ScoreForecasts.R` in the `workflows/ler_ms` to score the baseline and multi-model ensemble forecasts and calculate the shadowing time for all the forecasts
+
+6. Run `04_ManuscriptPlots.R` script in the `workflows/ler_ms` folder to reproduce manuscript and supplemental figures
 
 # Instructions for reproducing using Docker
 
