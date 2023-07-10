@@ -1,5 +1,5 @@
 # install packages
-install.packages(c("remotes", "tidyverse", "lubridate", "arrow", "fable"))
+install.packages(c("remotes", "tidyverse", "lubridate", "arrow", "fable", "tsibble"))
 install.packages(c("here", "aws.s3"))
 install.packages('ggpubr', 'ggh4x')
 remotes::install_cran("xtable")

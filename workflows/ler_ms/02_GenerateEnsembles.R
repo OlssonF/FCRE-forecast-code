@@ -3,10 +3,9 @@
 
 # There will be  different scored forecasts
 # 5 individual models (3 process based, 2 empirical baseline)
-# and then 2 multi-model ensembles (PM ensemble (ler), full ensemble (empirical-ler)) 
+# and then 2 multi-model ensembles (PM ensemble (ler), full ensemble (empirical-ler))
 
-# library(GLM3r)
-# library(FLAREr)
+
 library(arrow)
 library(tidyverse)
 library(lubridate)
@@ -22,7 +21,7 @@ gc()
 message('read in individual models from file')
 
 # Reads in from a local directory
-local_path <- './forecasts/reruns'
+local_path <- './forecasts/ler_ms/reruns'
 
 forecast_parquets <- arrow::open_dataset(local_path)
 
@@ -45,7 +44,7 @@ Simstrat_forecast <- forecast_parquets |>
   filter(model_id == 'Simstrat',
          variable == 'temperature') |>
   mutate(parameter = parameter + 2000)|>
-  collect() 
+  collect()
 message('Simstrat read')
 
 # Baseline forecasts
@@ -60,7 +59,7 @@ climatology_forecast <- forecast_parquets |>
   filter(model_id == 'climatology',
          variable == 'temperature') |>
   mutate(parameter = parameter + 4000) |>
-  collect() 
+  collect()
 message('Climatology read')
 
 # function to create the multi-model ensemble, by resampling each individual model
@@ -79,11 +78,11 @@ create.mme <- function(forecasts, n = 256, ensemble_name, path = local_path) {
       mutate(model_id = ensemble_name,
              site_id = 'fcre') %>%
       group_by(site_id, model_id, reference_datetime)
-    
-    mme_forecast <- bind_rows(mme_forecast, forecast_sample) 
-    
+
+    mme_forecast <- bind_rows(mme_forecast, forecast_sample)
+
   }
-  
+
   mme_forecast |>
     arrow::write_dataset(local_path)
   message(ensemble_name, ' generated')

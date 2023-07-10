@@ -1,5 +1,5 @@
-# Script 3 in workflow that takes all 8 forecasts and scores them using 
-# the FLAREr function 
+# Script 3 in workflow that takes all 8 forecasts and scores them using
+# the FLAREr function
 
 # library(FLAREr)
 library(arrow)
@@ -11,37 +11,37 @@ rm(list = ls())
 
 setwd(here::here())
 
-source('./R/scoring_function_arrow.R')
-source('./R/shadow_time.R')
+source('./workflows/ler_ms/R/scoring_function_arrow.R')
+source('./workflows/ler_ms/R/shadow_time.R')
 
-local_path <- './scores/reruns'
+local_path <- 'scores/ler_ms/reruns'
 
 if (!dir.exists(local_path)) {
-  dir.create(local_path)
+  dir.create(local_path, recursive = T)
 }
 
 
 #### Read in forecasts ####
 # Open the dataset of forecast parquets to be scored
-forecast_parquets <- './forecasts/reruns/site_id=fcre'
+forecast_parquets <- './forecasts/ler_ms/reruns/site_id=fcre'
 forecast_s3 <- arrow::SubTreeFileSystem$create(forecast_parquets)
-open_parquets <- arrow::open_dataset(forecast_s3) 
+open_parquets <- arrow::open_dataset(forecast_s3)
 
 
 # vector of unique model_ids
 models <- c("GLM",
             "GOTM",
             "Simstrat",
-            "RW", 
+            "RW",
             "empirical_ler",
             "ler",
             "climatology")
 
 # vector of unique reference_datetimes
 unique_reftime <- open_parquets |>
-  distinct(reference_datetime) |> 
-  collect() |> 
-  arrange(reference_datetime) |> 
+  distinct(reference_datetime) |>
+  collect() |>
+  arrange(reference_datetime) |>
   pull(reference_datetime)
 
 # get all combinations of model and reference_datetime
@@ -49,8 +49,8 @@ model_refdates <- expand.grid(model_id = models, reference_datetime = unique_ref
 
 # only need to score the baselines and ensembles
 # (the individual PM models were scored in the FLARE combined workflow)
-to_score <- model_refdates |> 
-  filter(model_id %in% c("RW", 
+to_score <- model_refdates |>
+  filter(model_id %in% c("RW",
                          "empirical_ler",
                          "ler",
                          "climatology"))
@@ -61,24 +61,24 @@ to_score <- model_refdates |>
 for (i in 1:nrow(to_score)) {
   # subset the model and reference datetime
   forecast_df <- open_parquets|>
-  dplyr::filter(model_id == to_score$model_id[i], 
+  dplyr::filter(model_id == to_score$model_id[i],
                 reference_datetime == to_score$reference_datetime[i]) |>
     mutate(site_id = 'fcre') |>
   collect()
-  
+
   if (nrow(forecast_df) != 0) {
     # Score the forecast
     generate_forecast_score_arrow(targets_file = 'https://s3.flare-forecast.org/targets/ler_ms3/fcre/fcre-targets-insitu.csv',
                                   forecast_df = forecast_df,
                                   local_directory = local_path)
     message(i, "/", nrow(to_score), " forecasts scored")
-    
-    
+
+
   } else {
     message('no forecast for ', to_score$model_id[i], ' ', to_score$reference_datetime[i] )
   }
-  
-} 
+
+}
 #=============================#
 
 # write the ensemble and baseline scores to s3 bucket
@@ -112,20 +112,20 @@ last_date <- scores_parquets %>%
 
 forecast_dates <- paste0(seq.Date(as.Date(first_date),as.Date(last_date), 7), ' 00:00:00')
 
-new_scores <- scores_parquets |> 
-  distinct(model_id) |> 
-  filter(model_id %in% new_models) |> 
-  pull() 
+new_scores <- scores_parquets |>
+  distinct(model_id) |>
+  filter(model_id %in% new_models) |>
+  pull()
 
 # write the new scores to the S3 bucket
 for (i in 1:length(new_scores)) {
-  df <- scores_parquets |> 
+  df <- scores_parquets |>
     filter(model_id == new_scores[i],
-           reference_datetime %in% forecast_dates) |> 
-    mutate(site_id = 'fcre') |> 
+           reference_datetime %in% forecast_dates) |>
+    mutate(site_id = 'fcre') |>
     collect()
-  
-  arrow::write_dataset(df, path = output_directory, 
+
+  arrow::write_dataset(df, path = output_directory,
                        partitioning = c("site_id","model_id","reference_datetime"))
   message(new_scores[i], ' scores written to S3')
 }
@@ -136,7 +136,7 @@ for (i in 1:length(new_scores)) {
 ### Shadowing time ####
 # Calculating the shadowing time uses 1 forecast each reference_Datetime-model combination independently
 # read in the targets
-targets_df <- read_csv('https://s3.flare-forecast.org/targets/ler_ms3/fcre/fcre-targets-insitu.csv') |> 
+targets_df <- read_csv('https://s3.flare-forecast.org/targets/ler_ms3/fcre/fcre-targets-insitu.csv') |>
   mutate(site_id = paste0(site_id, '_', depth))
 
 
@@ -145,22 +145,22 @@ shadow_summary  <- purrr::map2_dfr(
   .x = model_refdates$model_id,
   .y = model_refdates$reference_datetime,
   .f = function(mod, ref_datetime) {
-    
+
     message(mod, ' ',ref_datetime)
-    
+
     forecast_df <- open_parquets|>
-      dplyr::filter(model_id == mod, 
+      dplyr::filter(model_id == mod,
                     reference_datetime == ref_datetime) |>
       mutate(site_id = 'fcre') |>
       collect()
-    
+
     shadow_time <- calc_shadow_time(forecast_df, targets_df, var = 'temperature',
-                                    sd = 0.2, p = c(0.975, 0.025))  
+                                    sd = 0.2, p = c(0.975, 0.025))
     if (!is.null(shadow_time)) {
       shadow_time |> mutate(model_id = mod,
                             reference_datetime = ref_datetime)
     }
-      
+
   }
 )
 

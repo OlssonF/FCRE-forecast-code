@@ -9,10 +9,10 @@ model_id_list <- c("GLM",
                    "empirical_ler",
                    "ler",
                    "climatology")
-use_s3 <- TRUE
+use_s3 <- F
 first_date <- "2021-03-01 00:00:00"
 last_date <- "2023-02-20 00:00:00"
-start_date_list <- seq.Date(as.Date(first_date),as.Date(last_date), 7)
+start_date_list <- as.character(seq.Date(as.Date(first_date),as.Date(last_date), 7))
 
 
 lake_directory <- here::here()
@@ -56,15 +56,15 @@ message("Archiving forecast parquets")
 if(use_s3){
   s3_forecast <- arrow::s3_bucket(bucket = "forecasts/ler_ms3/parquet", endpoint_override =  "s3.flare-forecast.org", anonymous = TRUE)
 }else{
-  s3_forecast <- file.path(lake_directory, "forecasts/fcre/reruns/parquets/")
+  s3_forecast <- file.path(lake_directory, "forecasts/ler_ms/reruns/")
 }
 
 df_all <- open_dataset(s3_forecast) |>
   filter(site_id %in% site_id_list,
          model_id %in% model_id_list)
 
-write_dataset(df_all, path = file.path(lake_directory, "archive/forecasts/forecasts"),
-              hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
+write_dataset(df_all, path = file.path(lake_directory, "archive/forecasts/forecasts/ler_ms/reruns"),
+              hive_style = TRUE, partitioning = c("site_id","model_id","reference_datetime"))
 
 setwd(file.path(lake_directory, "archive/forecasts"))
 files2zip <- fs::dir_ls(recurse = TRUE)
@@ -81,15 +81,15 @@ if(use_s3){
                              endpoint_override =  "s3.flare-forecast.org",
                              anonymous = TRUE)
 }else{
-  s3_scores <- file.path(lake_directory, "scores/reruns")
+  s3_scores <- file.path(lake_directory, "scores/ler_ms/reruns")
 }
 
 df_all <- open_dataset(s3_scores) |>
   filter(site_id %in% site_id_list,
          model_id %in% model_id_list)
 
-write_dataset(df_all, path = file.path(lake_directory, "archive/scores/scores/"),
-              hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
+write_dataset(df_all, path = file.path(lake_directory, "archive/scores/scores/ler_ms/reruns"),
+              hive_style = TRUE, partitioning = c("site_id","model_id", "reference_datetime"))
 
 
 setwd(file.path(lake_directory, "archive/scores"))
