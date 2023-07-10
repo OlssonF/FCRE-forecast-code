@@ -9,7 +9,7 @@ model_id_list <- c("GLM",
                    "empirical_ler",
                    "ler",
                    "climatology")
-use_s3 <- FALSE
+use_s3 <- TRUE
 first_date <- "2021-03-01 00:00:00"
 last_date <- "2023-02-20 00:00:00"
 start_date_list <- paste0(seq.Date(as.Date(first_date),as.Date(last_date), 7), ' 00:00:00')
@@ -38,7 +38,8 @@ s3_stage3 <- s3_bucket("drivers/noaa/gefs-v12-reprocess/stage3/parquet", endpoin
 df <- open_dataset(s3_stage3, partitioning = c("site_id")) |>
   filter(site_id %in% site_id_list)
 
-write_dataset(df, path = file.path(lake_directory, "archive/drivers/drivers/noaa/gefs-v12-reprocess/stage3"),
+write_dataset(df,
+              path = file.path(lake_directory, "archive/drivers/drivers/noaa/gefs-v12-reprocess/stage3"),
               hive_style = FALSE,
               partitioning = c("site_id"))
 
@@ -55,7 +56,7 @@ message("Archiving forecast parquets")
 if(use_s3){
   s3_forecast <- arrow::s3_bucket(bucket = "forecasts/ler_ms3/parquet", endpoint_override =  "s3.flare-forecast.org", anonymous = TRUE)
 }else{
-  s3_forecast <- file.path(lake_directory, "forecasts/reruns/parquets/")
+  s3_forecast <- file.path(lake_directory, "forecasts/fcre/reruns/parquets/")
 }
 
 df_all <- open_dataset(s3_forecast) |>
@@ -64,12 +65,6 @@ df_all <- open_dataset(s3_forecast) |>
 
 write_dataset(df_all, path = file.path(lake_directory, "archive/forecasts/forecasts"),
               hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
-
-df_IC_off <- open_dataset(s3_IC_off) |>
-  filter(site_id %in% site_id_list,
-         model_id %in% model_id_list)
-
-write_dataset(df_IC_off, path = file.path(lake_directory, "archive/forecasts/forecasts/IC_off"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
 
 setwd(file.path(lake_directory, "archive/forecasts"))
 files2zip <- fs::dir_ls(recurse = TRUE)
@@ -93,7 +88,7 @@ df_all <- open_dataset(s3_scores) |>
   filter(site_id %in% site_id_list,
          model_id %in% model_id_list)
 
-write_dataset(df_all, path = file.path(lake_directory, "archive/scores/scores/all_UC"),
+write_dataset(df_all, path = file.path(lake_directory, "archive/scores/scores/"),
               hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
 
 
