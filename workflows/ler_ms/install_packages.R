@@ -1,7 +1,7 @@
 # install packages
 install.packages(c("remotes", "tidyverse", "lubridate", "arrow", "fable", "tsibble"))
 install.packages(c("here", "aws.s3"))
-install.packages('ggpubr', 'ggh4x')
+install.packages(c('ggpubr', 'ggh4x'))
 remotes::install_cran("xtable")
 
 remotes::install_github("GLEON/rLakeAnalyzer", ref = "e74974f74082111065bd9cd759527f16608b3c82")
