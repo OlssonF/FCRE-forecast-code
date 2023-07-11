@@ -9,8 +9,44 @@ Sys.setenv('AWS_DEFAULT_REGION' = 's3',
            'USE_HTTPS' = TRUE,
            'TZ' = 'UTC')
 
-use_s3 <- TRUE
+config_files <- c("configure_flare_GLM.yml","configure_flare.yml","configure_flare.yml")
+configure_run_file <- "configure_run.yml"
+config_set_name <- "ler_ms"
 lake_directory <- here::here()
+forecast_site <- "fcre"
+
+use_archive <- TRUE
+use_s3 <- FALSE
+
+starting_index <- 1
+
+# If function to check whether to use archived drivers of get new ones
+
+if(use_archive){
+  use_s3 <- FALSE
+  use_met_s3 <- FALSE
+
+  if(!file.exists("drivers.zip")){
+    download.file(url = "https://zenodo.org/record/7925098/files/drivers.zip?download=1",
+                  destfile = file.path(lake_directory,"drivers.zip"), method = "curl")
+  }
+
+  unzip(file.path(lake_directory,"drivers.zip"))
+  met_local_directory <- file.path(lake_directory,"drivers/noaa/gefs-v12-reprocess")
+  dir.create(file.path(lake_directory, "drivers/noaa/gefs-v12-reprocess", "stage3", "parquet", "fcre"),
+             recursive = TRUE, showWarnings = FALSE)
+  file.copy(from = file.path(lake_directory, "drivers/noaa/gefs-v12-reprocess", "stage3", "fcre", "part-0.parquet"),
+            to = file.path(lake_directory, "drivers/noaa/gefs-v12-reprocess", "stage3", "parquet", "fcre", "part-0.parquet"))
+
+}else{
+  Sys.setenv('AWS_DEFAULT_REGION' = 's3',
+             'AWS_S3_ENDPOINT' = 'flare-forecast.org',
+             'USE_HTTPS' = TRUE)
+  met_local_directory <- NULL
+  use_met_s3 <- TRUE
+}
+
+
 starting_index <- 1
 
 
@@ -18,10 +54,6 @@ files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
 sapply(files.sources, source)
 
 models <- c("GLM", "GOTM","Simstrat")
-
-config_files <- c("configure_flare_GLM.yml","configure_flare.yml","configure_flare.yml")
-configure_run_file <- "configure_run.yml"
-config_set_name <- "ler_ms"
 
 num_forecasts <- 52*2
 days_between_forecasts <- 7
