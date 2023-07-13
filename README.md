@@ -32,7 +32,7 @@ This code reproduces figures from the Falling Creek Reservoir multi-model ensemb
 
 1. Download and install Docker to your computer (https://www.docker.com)
 
-2. At the command line, run `docker run --rm -ti -e PASSWORD=yourpassword -p 8787:8787 XXX/XXXX`
+2. At the command line, run `docker run --rm -ti -e PASSWORD=yourpassword -p 8787:8787 olssonf/olsson_et_al:latest`
 
 3. Open a webbrowser and enter `http://localhost:8787`.  You will see an Rstudio login screen.  The user name is `rstudio` and the password is `yourpassword`
 
