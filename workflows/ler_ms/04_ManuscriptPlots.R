@@ -740,9 +740,10 @@ plot_s3 <-
   geom_ribbon(aes(ymax = quantile90, ymin = quantile10, colour = model_id),
               fill = NA, linetype = 'dashed') +
   geom_line(aes(colour = model_id), linewidth = 0.8) +
-  geom_point(aes(y = observation), alpha = 0.5, size = 0.8) +
-  scale_colour_manual(values = cols, limits = individual_models, name = 'Forecast') +
+  geom_point(aes(y = observation, shape = 'Observations'), size = 0.6) +
   labs(y = 'Water temperature (°C)') +
+  scale_colour_manual(values = cols, limits = individual_models, name = 'Forecast') +
+  scale_shape_discrete(name = ' ')+
   scale_y_continuous(sec.axis = sec_axis(~ . , name = "Depth (m)", breaks = NULL, labels = NULL)) +
   scale_x_datetime(date_labels = '%d %b %y', date_breaks = "6 months", name = 'Date',
                    sec.axis = sec_axis(~ . , name = "Horizon (days)", breaks = NULL, labels = NULL))  +
