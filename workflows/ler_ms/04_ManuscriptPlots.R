@@ -131,7 +131,9 @@ all_scored <-  all_scored |>
                                               "ler" = "PM MME")))
 out_dir <- 'plots/reruns'
 
-
+if (!dir.exists(out_dir)) {
+  dir.create(out_dir, recursive = T)
+}
 
 shadow_summary <- read_csv('shadow_summary.csv') |>
   mutate(model_id = plyr::revalue(model_id, c("empirical_ler"="Full MME",
@@ -182,7 +184,7 @@ forecast_example1 <- all_scored |>
   filter(reference_datetime == forecast_date_plots[1], (depth == 1)) |>
   ggplot(aes(x=horizon, y = median)) +
   geom_point(aes(y=observation)) +
-  geom_line(aes(colour = model_id),linewidth = 1) +
+  geom_line(aes(colour = model_id),size = 1) +
   geom_ribbon(aes(ymax = quantile97.5, ymin = quantile02.5, fill = model_id), alpha = 0.1) +
   theme_bw() +
   facet_manual(~factor(model_id, levels = example_levels),
@@ -202,7 +204,7 @@ forecast_example2 <- all_scored |>
          depth == 8) |>
   ggplot(aes(x=horizon, y = median)) +
   geom_point(aes(y=observation)) +
-  geom_line(aes( colour = model_id),linewidth = 1) +
+  geom_line(aes( colour = model_id),size = 1) +
   geom_ribbon(aes(ymax = quantile97.5, ymin = quantile02.5, fill = model_id), alpha = 0.1) +
   theme_bw() +
   facet_manual(~factor(model_id, levels = example_levels),
@@ -237,7 +239,7 @@ absbias_plot <-
   summarise_if(is.numeric, mean, na.rm = T) %>%
   na.omit() %>%
   ggplot(., aes(x=horizon, y= abs_bias, colour = model_id, linetype = model_id)) +
-  geom_line(linewidth = 0.9) +
+  geom_line(size = 0.9) +
   scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
   scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
   scale_x_continuous(breaks = c(1,7,14)) +
@@ -257,7 +259,7 @@ sd_plot <- all_scored %>%
   summarise_if(is.numeric, mean, na.rm = T) %>%
   na.omit() %>%
   ggplot(., aes(x=horizon, y= sd, colour = model_id, linetype = model_id)) +
-  geom_line(linewidth = 0.9) +
+  geom_line(size = 0.9) +
   scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
   scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
   scale_x_continuous(breaks = c(1,7,14)) +
@@ -275,7 +277,7 @@ logs_plot <- all_scored %>%
   summarise_if(is.numeric, mean, na.rm = T) %>%
   na.omit() %>%
   ggplot(., aes(x=horizon, y= logs, colour = model_id, linetype = model_id)) +
-  geom_line(linewidth = 0.9) +
+  geom_line(size = 0.9) +
   scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
   scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
   scale_x_continuous(breaks = c(1,7,14)) +
@@ -493,7 +495,7 @@ bias_plot <-
   summarise_if(is.numeric, mean, na.rm = T) %>%
   na.omit() %>%
   ggplot(.) +
-  geom_line(aes(x=horizon, y= bias, colour = model_id, linetype = model_id), linewidth = 0.9) +
+  geom_line(aes(x=horizon, y= bias, colour = model_id, linetype = model_id), size = 0.9) +
   facet_wrap(~depth, ncol = 1, labeller = label_both) +
   scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
   scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
@@ -520,7 +522,7 @@ sd_plot <-
   summarise_if(is.numeric, mean, na.rm = T) %>%
   na.omit() %>%
   ggplot() +
-  geom_line(aes(x=horizon, y= sd, colour = model_id, linetype = model_id), linewidth = 0.9) +
+  geom_line(aes(x=horizon, y= sd, colour = model_id, linetype = model_id), size = 0.9) +
   facet_wrap(~depth, ncol = 1, labeller = label_both)+
   scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
   scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
@@ -546,7 +548,7 @@ logs_plot <-
   summarise_if(is.numeric, mean, na.rm = T) %>%
   na.omit() %>%
   ggplot() +
-  geom_line(aes(x=horizon, y= logs, colour = model_id, linetype = model_id), linewidth = 0.9) +
+  geom_line(aes(x=horizon, y= logs, colour = model_id, linetype = model_id), size = 0.9) +
   facet_wrap(~depth, ncol = 1, labeller = label_both)+
   scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
   scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
@@ -739,7 +741,7 @@ plot_s3 <-
   facet_grid(depth~horizon) +
   geom_ribbon(aes(ymax = quantile90, ymin = quantile10, colour = model_id),
               fill = NA, linetype = 'dashed') +
-  geom_line(aes(colour = model_id), linewidth = 0.8) +
+  geom_line(aes(colour = model_id), size = 0.8) +
   geom_point(aes(y = observation, shape = 'Observations'), size = 0.6) +
   labs(y = 'Water temperature (°C)') +
   scale_colour_manual(values = cols, limits = individual_models, name = 'Forecast') +
