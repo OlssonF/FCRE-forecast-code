@@ -742,7 +742,7 @@ plot_s3 <-
   geom_ribbon(aes(ymax = quantile90, ymin = quantile10, colour = model_id),
               fill = NA, linetype = 'dashed') +
   geom_line(aes(colour = model_id), size = 0.8) +
-  geom_point(aes(y = observation, shape = 'Observations'), size = 0.6) +
+  geom_point(aes(y = observation, shape = 'Observations'), size = 0.4) +
   labs(y = 'Water temperature (°C)') +
   scale_colour_manual(values = cols, limits = individual_models, name = 'Forecast') +
   scale_shape_discrete(name = ' ')+
@@ -755,7 +755,7 @@ plot_s3 <-
         axis.title.y.right = element_text(vjust = 1.2),
         axis.title.x.top = element_text(vjust = 1.2))
 
-ggsave(plot_s3, filename = file.path(out_dir, 'plot_s3.png'), height = 12, width = 32, units = 'cm')
+ggsave(plot_s3, filename = file.path(out_dir, 'plot_s3.png'), height = 11, width = 25, units = 'cm')
 
 
 
