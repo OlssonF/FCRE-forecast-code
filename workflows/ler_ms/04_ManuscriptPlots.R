@@ -649,7 +649,7 @@ layout_design <- "
 plot_s1 <- param_values |>
   filter(reference_datetime == '2021-02-22 00:00:00') |>
   ggplot(aes(x=datetime, y = prediction, group = parameter)) +
-  geom_line() +
+  geom_line(alpha = 0.2) +
   scale_x_datetime(date_labels = '%d %b %Y', date_breaks = '1 month', expand = c(0.01, 0)) +
   ggh4x::facet_manual(vars(model_id,variable),
                       scales = 'free', axes = T,
