@@ -145,7 +145,7 @@ shadow_summary <- read_csv('shadow_summary.csv') |>
 
 #=======================================#
 # Main text ---------------------------------------------------------------
-##  PLOT 2 - observations =====
+##  FIGURE 2 - observations =====
 plot_2 <-
   all_scored |>
   na.omit() |>
@@ -169,7 +169,7 @@ ggsave(plot_2, filename = file.path(out_dir, 'plot_2.png'), height = 10, width =
 
 #=============================================#
 
-##  PLOT 3 - example forecasts ====
+##  FIGURE 3 - example forecasts ====
 layout_design <- "
   ABC
   DE#
@@ -228,7 +228,7 @@ ggsave(plot_3, filename = file.path(out_dir, 'plot_3.png'), height = 10, width =
 
 #=====================================#
 
-##  PLOT 4 - aggregated metrics ====
+##  FIGURE 4 - aggregated metrics ====
 absbias_plot <-
   all_scored %>%
   filter(variable == 'temperature',
@@ -297,7 +297,7 @@ ggsave(plot_4, filename = file.path(out_dir, 'plot_4.png'), height = 8, width = 
 
 #==========================================#
 
-##  PLOT 5 - model cross correlation ====
+##  FIGURE 5 - model cross correlation ====
 
 all_list <- all_scored |>
   mutate(bias = mean - observation,
@@ -432,7 +432,7 @@ plot_5 <- ggpubr::ggarrange(h1_ccf, h7_ccf, h14_ccf, nrow = 1,
 ggsave(plot_5, filename = file.path(out_dir, 'plot_5.png'), height = 8, width = 21, units = 'cm')
 #============================================#
 
-##  PLOT 6 - rank proportions ====
+##  FIGURE 6 - rank proportions ====
 # plot of proportion of ranked forecasts
 facet_tags <- expand.grid(depth = c(1,8),
                           model_id= all_models[!str_detect(all_models, '  ')]) |>
@@ -543,7 +543,7 @@ plot_7 <- ggpubr::ggarrange(logs_plot, shadow_plot, common.legend = T, widths = 
 
 ggsave(plot_7, filename = file.path(out_dir, 'plot_7.png'), height = 10, width = 17, units = 'cm')
 #============================================#
-## TABLE_1 - aggregated scores ====
+## TABLE 1 - aggregated scores ====
 # aggregated scores
 all_scored %>%
   filter(variable == 'temperature',
@@ -563,7 +563,7 @@ shadow_summary |>
 
 
 # Supplementary Information -----------------------------------------------
-##  PLOT_S1 - Parameter tuning =====
+##  FIGURE S1 - Parameter tuning =====
 
 
 # evolution of the parameters over the spin up period before the first forecast
@@ -605,7 +605,7 @@ ggsave(plot_s1, filename = file.path(out_dir, 'plot_s1.png'), height = 20, width
 
 #===========================#
 
-##  PLOT_S2 - Observational uncertainty =====
+##  FIGURE S2 - Observational uncertainty =====
 lake_directory <- here::here()
 FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f",
                      file = 'FCR_Catwalk_2018_2021.csv',
@@ -663,7 +663,7 @@ plot_s2 <- mean_interday_sd |>
 ggsave(plot_s2, filename = file.path(out_dir, 'plot_s2.png'), height = 10, width = 10, units = 'cm')
 #===========================#
 
-##  PLOT_S3 - Forecast time series =====
+##  FIGURE S3 - Forecast time series =====
 plot_s3 <-
   all_scored %>%
   filter(variable == 'temperature',
@@ -702,7 +702,7 @@ ggsave(plot_s3, filename = file.path(out_dir, 'plot_s3.png'), height = 11, width
 
 #===========================#
 
-##  PLOT_S4 - Best/worst rank proportion =====
+##  FIGURE S4 - Best/worst rank proportion =====
 
 facet_tags <- data.frame(depth = c(1,8),
                          name = c('best model', 'worst model',
@@ -749,7 +749,7 @@ ggsave(plot_s4, filename = file.path(out_dir, 'plot_s4.png'), height = 12, width
 
 #===========================#
 
-##  TABLE_S2 - Disaggregated scores =====
+##  TABLE S2 - Disaggregated scores =====
 
 all_scored %>%
   filter(variable == 'temperature',
