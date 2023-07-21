@@ -573,10 +573,18 @@ param_config <- read_csv('./configuration/ler_ms/parameter_calibration_config.cs
   rename(model_id = model)
 
 # got to the right bucket
-param_values <- arrow::s3_bucket(bucket = "forecasts/ler_ms3/parquet",
-                                 endpoint_override =  "s3.flare-forecast.org",
-                                 anonymous = TRUE) |>
-  open_dataset() |>
+
+if (local == TRUE) {
+  forecasts_parquets <- arrow::open_dataset('./forecasts/ler_ms/reruns/site_id=fcre')
+} else {
+  s3_ler <- arrow::s3_bucket(bucket = "forecasts/ler_ms3/parquet",
+                             endpoint_override =  "s3.flare-forecast.org",
+                             anonymous = TRUE)
+
+  forecasts_parquets <- arrow::open_dataset(s3_ler)
+}
+
+param_values <- forecasts_parquet
   filter(variable %in% param_config$par_names_save) |>
   collect()
 
