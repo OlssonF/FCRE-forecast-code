@@ -475,67 +475,10 @@ ggsave(plot_6, filename = file.path(out_dir, 'plot_6.png'), height = 8, width = 
 
 #==============================================#
 
-##  PLOT 7 - depth disaggregated scores ======
+##  FIGURE 7 - disaggregated forecast performance ======
 facet_tags <- data.frame(depth = c(1,8),
-                         metric = c('bias', 'bias',
-                                    'sd', 'sd',
-                                    'ign', 'ign'),
-                         tag = c('a)', 'b)',
-                                 'c)', 'd)',
-                                 'e)', 'f)'))
-# bias
-bias_plot <-
-  all_scored %>%
-  filter(variable == 'temperature',
-         between(horizon, 1, 14),
-         model_id %in% all_models,
-         depth %in% c(1,8)) %>%
-  mutate(bias = mean - observation) %>%
-  group_by(horizon, model_id, depth) %>%
-  summarise_if(is.numeric, mean, na.rm = T) %>%
-  na.omit() %>%
-  ggplot(.) +
-  geom_line(aes(x=horizon, y= bias, colour = model_id, linetype = model_id), size = 0.9) +
-  facet_wrap(~depth, ncol = 1, labeller = label_both) +
-  scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
-  scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
-  scale_x_continuous(breaks = c(1,7,14)) +
-  labs(y = 'Bias (°C)',
-       x = 'Horizon (days)') +
-  theme_bw() +
-  geom_text(data = subset(facet_tags,
-                          metric == 'bias'),
-            mapping = aes(x = -1, y = 2.5, label = tag),
-            size = 4, fontface = 'bold') +
-  guides(colour =guide_legend(nrow = 3, title.position = 'top', title.hjust = 0.5))  +
-  coord_cartesian(xlim = c(1, 14), ylim = c(-1.8, 1.8),clip = "off")
-
-
-# variance
-sd_plot <-
-  all_scored %>%
-  filter(variable == 'temperature',
-         between(horizon, 1, 14),
-         model_id %in% all_models,
-         depth %in% c(1,8)) %>%
-  group_by(horizon, model_id, depth) %>%
-  summarise_if(is.numeric, mean, na.rm = T) %>%
-  na.omit() %>%
-  ggplot() +
-  geom_line(aes(x=horizon, y= sd, colour = model_id, linetype = model_id), size = 0.9) +
-  facet_wrap(~depth, ncol = 1, labeller = label_both)+
-  scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
-  scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
-  scale_x_continuous(breaks = c(1,7,14)) +
-  labs(y = 'Standard deviation (°C)',
-       x = 'Horizon (days)') +
-  theme_bw() +
-  geom_text(data = subset(facet_tags,
-                          metric == 'sd'),
-            mapping = aes(x = -1, y = 4.3, label = tag),
-            size = 4, fontface = 'bold') +
-  guides(colour = guide_legend(nrow = 3, title.position = 'top', title.hjust = 0.5)) +
-  coord_cartesian(xlim = c(1, 14), ylim = c(-0.5, 3.5), clip = "off")
+                         metric = c('ign', 'ign'),
+                         tag = c('a)', 'b)'))
 
 # log score
 logs_plot <-
@@ -548,32 +491,29 @@ logs_plot <-
   summarise_if(is.numeric, mean, na.rm = T) %>%
   na.omit() %>%
   ggplot() +
+  geom_point(aes(x= -20, y= 5, shape = model_id, colour = model_id)) +
   geom_line(aes(x=horizon, y= logs, colour = model_id, linetype = model_id), size = 0.9) +
   facet_wrap(~depth, ncol = 1, labeller = label_both)+
+
   scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
   scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
+  scale_shape_manual(values = shapes, limits = all_models, name = 'Model')  +
   scale_x_continuous(breaks = c(1,7,14)) +
+
   labs(y = 'Ignorance score', x = 'Horizon (days)') +
   theme_bw()+
   geom_text(data = subset(facet_tags,
                           metric == 'ign'),
-            mapping = aes(x = -1, y = 4.3, label = tag),
+            mapping = aes(x = -0.5, y = 4.3, label = tag),
             size = 4, fontface = 'bold') +
   guides(colour = guide_legend(nrow = 3, title.position = 'top', title.hjust = 0.5)) +
   coord_cartesian(xlim = c(1, 14), ylim = c(-0.5, 3.5), clip = "off")
 
 
-plot_7 <- ggpubr::ggarrange(bias_plot, sd_plot, logs_plot,
-                            ncol  = 3, common.legend = T, align = "hv")
-
-ggsave(plot_7, filename = file.path(out_dir, 'plot_7.png'), height = 10, width = 15, units = 'cm')
-#============================================#
-
-##  PLOT 8 - Shadowing time ======
 facet_tags <- data.frame(strat = c('stratified_period', 'mixed_period'),
-                         tag = c('b)', 'a)'))
+                         tag = c('d)', 'c)'))
 
-plot_8 <-
+shadow_plot <-
   shadow_summary |>
   mutate(strat = is_strat(reference_datetime, strat_dates)) %>%
   group_by(depth, model_id, strat) |>
@@ -593,15 +533,16 @@ plot_8 <-
   labs(x= 'Mean shadowing length (days)', y = 'Depth (m)') +
   theme(panel.spacing = unit(1.1, "lines")) +
   geom_text(data = facet_tags,
-            mapping = aes(x = -0.6, y = -0.9, label = tag),
+            mapping = aes(x = -0.7, y = -0.9, label = tag),
             size = 4, fontface = 'bold') +
   coord_cartesian(clip = 'off',
                   xlim = c(0,14),
                   ylim = c(9,0))
 
-ggsave(plot_8, filename = file.path(out_dir, 'plot_8.png'), height = 7, width = 15, units = 'cm')
+plot_7 <- ggpubr::ggarrange(logs_plot, shadow_plot, common.legend = T, widths = c(0.5, 1))
 
-#=====================================#
+ggsave(plot_7, filename = file.path(out_dir, 'plot_7.png'), height = 10, width = 17, units = 'cm')
+#============================================#
 ## TABLE_1 - aggregated scores ====
 # aggregated scores
 all_scored %>%
