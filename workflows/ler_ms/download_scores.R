@@ -1,11 +1,20 @@
 lake_directory <- here::here()
 
-download.file(url = "https://sandbox.zenodo.org/record/1221469/files/scores.zip?download=1",
+download.file(url = "https://zenodo.org/record/7951402/files/scores.zip?download=1",
               destfile = file.path(lake_directory,"scores.zip"), method = "curl")
 unzip(file.path(lake_directory,"scores.zip"))
 
-download.file(url = "https://sandbox.zenodo.org/record/1221469/files/targets.zip?download=1",
-              destfile = file.path(lake_directory,"targets.zip"),
-              method = "curl")
+download.file(url = "https://zenodo.org/record/7951402/files/targets.zip?download=1",
+              destfile = file.path(lake_directory,"targets.zip"), method = "curl")
 unzip(file.path(lake_directory,"targets.zip"))
+
+
+# to plot Figure S1 the forecast archive also needs to be downloaded - this can be slow due to the file size
+forecasts <- FALSE
+
+if (forecasts == TRUE) {
+  download.file(url = "https://zenodo.org/record/7951402/files/forecasts.zip?download=1",
+                destfile = file.path(lake_directory,"forecasts.zip"), method = "curl")
+  unzip(file.path(lake_directory,"forecasts.zip"))
+}
 
