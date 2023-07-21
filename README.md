@@ -9,7 +9,7 @@ This code reproduces figures from the Falling Creek Reservoir multi-model ensemb
 2.  Run `install_packages.R` in the `workflows/ler_ms` folder to download GLM and FLARE packages and their dependencies
 
 3.  Run `download_scores.R` in the `workflows/ler_ms` folder to download driver data, and scores from Zenodo. 
-Note: to reproduce Figure S1, the forecasts will also need to be downloaded (change F to T in `download_scores.R`)
+Note: to reproduce Figure S1, the forecasts will also need to be downloaded (change `FALSE` to `TRUE` in `download_scores.R`)
 
 4.  Run `04_ManuscriptPlots.R` script in the `workflows/ler_ms` folder to reproduce manuscript and supplemental figures
 
