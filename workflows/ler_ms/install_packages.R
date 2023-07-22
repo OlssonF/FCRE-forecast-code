@@ -1,9 +1,9 @@
 # install packages
-install.packages(c("remotes", "tidyverse", "lubridate", "arrow", "fable", "tsibble", "ggpubr", "ggh4x"))
+install.packages(c("remotes", "tidyverse", "lubridate", "arrow", "fable", "tsibble", "ggpubr", "ggh4x", "rLakeAnalyzer"))
 install.packages(c("here", "aws.s3"))
 remotes::install_cran("xtable")
 
-remotes::install_github("GLEON/rLakeAnalyzer", ref = "e74974f74082111065bd9cd759527f16608b3c82")
+# remotes::install_github("GLEON/rLakeAnalyzer", ref = "e74974f74082111065bd9cd759527f16608b3c82")
 
 remotes::install_github("FLARE-forecast/GLM3r", ref = "a57f41d9e8e9a12e72675f2e02f032fe9f27b11c")
 remotes::install_github("FLARE-forecast/GOTMr", ref = "c7c7ed3d8259325a86be5ba2ea9c7e403d17c7ab")
