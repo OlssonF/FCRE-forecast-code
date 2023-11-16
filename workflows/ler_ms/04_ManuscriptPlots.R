@@ -11,13 +11,13 @@ source('workflows/ler_ms/R/time_functions.R')
 # Working document for the final plots for the paper   #
 # ====== ancillary bits and pieces ======#
 all_models <-  c('Full MME', 'PM MME', '  ',
-                 'persistence', 'climatology', '   ',
+                 'persistence', 'day-of-year', '   ',
                  'PM1', 'PM2', 'PM3')
 
-baselines_ensembles <- c('Full MME', 'persistence', 'climatology', 'PM MME')
+baselines_ensembles <- c('Full MME', 'persistence', 'day-of-year', 'PM MME')
 process_models <- c('PM MME', 'PM1', 'PM2', 'PM3')
-baseline_models <- c('climatology', 'persistence')
-individual_models <-  c('persistence', 'climatology', 'PM1', 'PM2', 'PM3')
+baseline_models <- c('day-of-year', 'persistence')
+individual_models <-  c('persistence', 'day-of-year', 'PM1', 'PM2', 'PM3')
 MME_models <- c('Full MME', 'PM MME')
 
 
@@ -26,7 +26,7 @@ time_periods <- c(stratified_period = "Stratified",
 
 
 cols <- c('persistence' = "#455BCDFF",
-          'climatology' =  "#30B1F4FF",
+          'day-of-year' =  "#30B1F4FF",
           '  ' = 'white',
           '   ' = 'white',
           'PM1' = "#A2FC3CFF", #'#FCA50AFF',
@@ -35,7 +35,7 @@ cols <- c('persistence' = "#455BCDFF",
           'PM MME' =  "#C42503FF", #'#6B186EFF',
           'Full MME' = 'black')#'darkgrey'
 
-linetypes <- c('climatology' = 'dotdash',
+linetypes <- c('day-of-year' = 'dotdash',
                'persistence' = 'dotdash',
                '  ' = 'solid',
                '   ' = 'solid',
@@ -45,7 +45,7 @@ linetypes <- c('climatology' = 'dotdash',
                'PM MME' =  "solid",
                'Full MME' = 'solid')
 
-shapes <- c('climatology' = 15,
+shapes <- c('day-of-year' = 15,
             'persistence' = 15,
             'PM1' = 16,
             'PM2' = 16,
@@ -128,6 +128,7 @@ all_scored <-  all_scored |>
                                               "GOTM"='PM2',
                                               "Simstrat"='PM3',
                                               "RW" = "persistence",
+                                              "climatology"="day-of-year",
                                               "ler" = "PM MME")))
 out_dir <- 'plots/reruns'
 
@@ -141,12 +142,13 @@ shadow_summary <- read_csv('shadow_summary.csv') |>
                                               "GOTM"='PM2',
                                               "Simstrat"='PM3',
                                               "RW" = "persistence",
+                                              "climatology"="day-of-year",
                                               "ler" = "PM MME")))
 
 #=======================================#
 # Main text ---------------------------------------------------------------
 ##  FIGURE 2 - observations =====
-plot_2 <-
+figure2 <-
   all_scored |>
   na.omit() |>
   select(datetime, observation, depth) |>
@@ -165,7 +167,7 @@ plot_2 <-
   scale_colour_viridis_d(name = 'Depth (m)', option = "H", begin = 0.9, end = 0.1) +
   theme(panel.grid.minor = element_blank())
 
-ggsave(plot_2, filename = file.path(out_dir, 'plot_2.png'), height = 10, width = 18, units = 'cm')
+ggsave(figure2, filename = file.path(out_dir, 'figure2.png'), height = 10, width = 18, units = 'cm')
 
 #=============================================#
 
@@ -177,7 +179,7 @@ layout_design <- "
 "
 forecast_date_plots <- c('2023-02-20 00:00:00',  '2022-08-01 00:00:00')
 example_levels <- c('PM1', 'PM2', 'PM3',
-                    'persistence', 'climatology',
+                    'persistence', 'day-of-year',
                     'PM MME','Full MME')
 
 forecast_example1 <- all_scored |>
@@ -185,7 +187,7 @@ forecast_example1 <- all_scored |>
   ggplot(aes(x=horizon, y = median)) +
   geom_point(aes(y=observation)) +
   geom_line(aes(colour = model_id),size = 1) +
-  geom_ribbon(aes(ymax = quantile97.5, ymin = quantile02.5, fill = model_id), alpha = 0.1) +
+  geom_ribbon(aes(ymax = quantile97.5, ymin = quantile02.5, fill = model_id), alpha = 0.25) +
   theme_bw() +
   facet_manual(~factor(model_id, levels = example_levels),
                design = layout_design) +
@@ -205,7 +207,7 @@ forecast_example2 <- all_scored |>
   ggplot(aes(x=horizon, y = median)) +
   geom_point(aes(y=observation)) +
   geom_line(aes( colour = model_id),size = 1) +
-  geom_ribbon(aes(ymax = quantile97.5, ymin = quantile02.5, fill = model_id), alpha = 0.1) +
+  geom_ribbon(aes(ymax = quantile97.5, ymin = quantile02.5, fill = model_id), alpha = 0.25) +
   theme_bw() +
   facet_manual(~factor(model_id, levels = example_levels),
                design = layout_design) +
@@ -219,12 +221,12 @@ forecast_example2 <- all_scored |>
   theme(panel.grid.minor = element_blank())
 
 
-plot_3 <- ggpubr::ggarrange(forecast_example1, forecast_example2,
+figure3 <- ggpubr::ggarrange(forecast_example1, forecast_example2,
                             nrow = 1,
                             common.legend = T, legend = 'none', labels = c('a)', 'b)')) +
   theme(panel.grid.minor = element_blank())
 
-ggsave(plot_3, filename = file.path(out_dir, 'plot_3.png'), height = 10, width = 20, units = 'cm')
+ggsave(figure3, filename = file.path(out_dir, 'figure3.png'), height = 10, width = 20, units = 'cm')
 
 #=====================================#
 
@@ -243,7 +245,7 @@ absbias_plot <-
   scale_colour_manual(values = cols, limits = all_models, name = 'Model') +
   scale_linetype_manual(values = linetypes, limits = all_models, name = 'Model') +
   scale_x_continuous(breaks = c(1,7,14)) +
-  labs(y = 'Absolute bias (°C)',
+  labs(y = 'Mean absolute bias (°C)',
        x = 'Horizon (days)', subtitle = 'a)') +
   theme_bw() +
   guides(colour =guide_legend(nrow = 3, title.position = 'top', title.hjust = 0.5)) +
@@ -288,11 +290,11 @@ logs_plot <- all_scored %>%
 
 
 
-plot_4 <- ggpubr::ggarrange(absbias_plot, sd_plot, logs_plot,
+figure4 <- ggpubr::ggarrange(absbias_plot, sd_plot, logs_plot,
                             ncol  = 3, common.legend = T,
                             align = "hv")
 
-ggsave(plot_4, filename = file.path(out_dir, 'plot_4.png'), height = 8, width = 17, units = 'cm')
+ggsave(figure4, filename = file.path(out_dir, 'figure4.png'), height = 8, width = 17, units = 'cm')
 
 
 #==========================================#
@@ -304,10 +306,10 @@ all_list <- all_scored |>
          change_bias = bias - lag(bias)) %>%
   select(reference_datetime, model_id, horizon, depth, bias) |>
   filter(horizon %in% c(1,7,14),
-         depth %in% c(1),
+         depth %in% c(1, 8),
          model_id %in% individual_models) |>
   pivot_wider(names_from = model_id, values_from = bias) |>
-  select(reference_datetime, horizon, depth, climatology, persistence, PM1, PM2, PM3) |>
+  select(reference_datetime, horizon, depth, `day-of-year`, persistence, PM1, PM2, PM3) |>
   na.omit() |>
   ungroup() |>
   # split into a list of dataframes for each horizon/depth combination
@@ -343,13 +345,8 @@ ccf_all <- lapply(all_list, function(x) ccf_matrix(x[,4:8]))
 
 library(rstatix) # for cor_gather
 
-facet_tags <- expand.grid(horizon = c(1,7,14),
-                          depth = 1,
-                          var1 = 'a',
-                          var2 = 'z') |>
-  mutate(tag = c('a)', 'b)', 'c)'))
 
-h1_ccf <-
+h1_d1_ccf <-
   lapply(ccf_all, cor_gather, drop.na = T) |>
   bind_rows(.id = 'group') |>
   separate(group, into = c('horizon', 'depth')) |>
@@ -361,11 +358,12 @@ h1_ccf <-
            .keep_all = TRUE) %>%
   select(-smaller, -larger) |>
   mutate(horizon = as.numeric(horizon)) |>
-  filter(horizon == 1) |>
+  filter(horizon == 1,
+         depth == 1) |>
   ggplot(aes(x=var1, y=var2)) +
   geom_tile(aes(fill = cor)) +
   geom_text(aes(label = round(cor, 2)), size = 3) +
-  facet_wrap(~horizon, labeller = label_both) +
+  facet_grid(depth~horizon, labeller = label_both) +
   labs(x='', y='')+
   colorspace::scale_fill_continuous_diverging(limits = c(-1,1), palette = 'Blue-Red 2',
                                               name = 'Cross correlation\ncoefficient') +
@@ -376,7 +374,7 @@ h1_ccf <-
         legend.position = 'top',
         axis.ticks = element_blank())
 
-h7_ccf <- lapply(ccf_all, cor_gather) |>
+h7_d1_ccf <- lapply(ccf_all, cor_gather) |>
   bind_rows(.id = 'group') |>
   separate(group, into = c('horizon', 'depth')) |>
   arrange(var1, var2) |>
@@ -387,11 +385,12 @@ h7_ccf <- lapply(ccf_all, cor_gather) |>
            .keep_all = TRUE) %>%
   select(-smaller, -larger) |>
   mutate(horizon = as.numeric(horizon)) |>
-  filter(horizon == 7) |>
+  filter(horizon == 7,
+         depth == 1) |>
   ggplot(aes(x=var1, y=var2)) +
   geom_tile(aes(fill = cor)) +
   geom_text(aes(label = round(cor, 2)), size = 3) +
-  facet_wrap(~horizon, labeller = label_both) +
+  facet_grid(depth~horizon, labeller = label_both) +
   labs(x='', y='')+
   colorspace::scale_fill_continuous_diverging(limits = c(-1,1), palette = 'Blue-Red 2') +
   theme_bw(base_size = 12) +
@@ -400,7 +399,7 @@ h7_ccf <- lapply(ccf_all, cor_gather) |>
         axis.ticks = element_blank())
 
 
-h14_ccf <- lapply(ccf_all, cor_gather) |>
+h14_d1_ccf <- lapply(ccf_all, cor_gather) |>
   bind_rows(.id = 'group') |>
   separate(group, into = c('horizon', 'depth')) |>
   arrange(var1, var2) |>
@@ -411,11 +410,66 @@ h14_ccf <- lapply(ccf_all, cor_gather) |>
            .keep_all = TRUE) %>%
   select(-smaller, -larger) |>
   mutate(horizon = as.numeric(horizon)) |>
-  filter(horizon == 14) |>
+  filter(horizon == 14,
+         depth == 1) |>
   ggplot(aes(x=var1, y=var2)) +
   geom_tile(aes(fill = cor)) +
   geom_text(aes(label = round(cor, 2)), size = 3) +
-  facet_wrap(~horizon, labeller = label_both) +
+  facet_grid(depth~horizon, labeller = label_both) +
+  labs(x='', y='')+
+  colorspace::scale_fill_continuous_diverging(limits = c(-1,1), palette = 'Blue-Red 2') +
+  theme_bw(base_size = 12) +
+  theme(panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        axis.ticks = element_blank())
+
+# adding plots for correlations at 8 m
+
+h1_d8_ccf <-
+  lapply(ccf_all, cor_gather, drop.na = T) |>
+  bind_rows(.id = 'group') |>
+  separate(group, into = c('horizon', 'depth')) |>
+  arrange(var1, var2) |>
+  group_by(horizon, depth) |>
+  #this makes sure we only have the upper left quadrant (not sure how it works tbh)
+  distinct(smaller = pmin(var1, var2),
+           larger = pmax(var1, var2),
+           .keep_all = TRUE) %>%
+  select(-smaller, -larger) |>
+  mutate(horizon = as.numeric(horizon)) |>
+  filter(horizon == 1,
+         depth == 8) |>
+  ggplot(aes(x=var1, y=var2)) +
+  geom_tile(aes(fill = cor)) +
+  geom_text(aes(label = round(cor, 2)), size = 3) +
+  facet_grid(depth~horizon, labeller = label_both) +
+  labs(x='', y='')+
+  colorspace::scale_fill_continuous_diverging(limits = c(-1,1), palette = 'Blue-Red 2',
+                                              name = 'Cross correlation\ncoefficient') +
+  theme_bw(base_size = 12) +
+  theme(panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        legend.title = element_text(vjust = 1),
+        legend.position = 'top',
+        axis.ticks = element_blank())
+
+h7_d8_ccf <- lapply(ccf_all, cor_gather) |>
+  bind_rows(.id = 'group') |>
+  separate(group, into = c('horizon', 'depth')) |>
+  arrange(var1, var2) |>
+  group_by(horizon, depth) |>
+  #this makes sure we only have the upper left quadrant (not sure how it works tbh)
+  distinct(smaller = pmin(var1, var2),
+           larger = pmax(var1, var2),
+           .keep_all = TRUE) %>%
+  select(-smaller, -larger) |>
+  mutate(horizon = as.numeric(horizon)) |>
+  filter(horizon == 7,
+         depth == 8) |>
+  ggplot(aes(x=var1, y=var2)) +
+  geom_tile(aes(fill = cor)) +
+  geom_text(aes(label = round(cor, 2)), size = 3) +
+  facet_grid(depth~horizon, labeller = label_both) +
   labs(x='', y='')+
   colorspace::scale_fill_continuous_diverging(limits = c(-1,1), palette = 'Blue-Red 2') +
   theme_bw(base_size = 12) +
@@ -424,12 +478,37 @@ h14_ccf <- lapply(ccf_all, cor_gather) |>
         axis.ticks = element_blank())
 
 
+h14_d8_ccf <- lapply(ccf_all, cor_gather) |>
+  bind_rows(.id = 'group') |>
+  separate(group, into = c('horizon', 'depth')) |>
+  arrange(var1, var2) |>
+  group_by(horizon, depth) |>
+  #this makes sure we only have the upper left quadrant (not sure how it works tbh)
+  distinct(smaller = pmin(var1, var2),
+           larger = pmax(var1, var2),
+           .keep_all = TRUE) %>%
+  select(-smaller, -larger) |>
+  mutate(horizon = as.numeric(horizon)) |>
+  filter(horizon == 14,
+         depth == 8) |>
+  ggplot(aes(x=var1, y=var2)) +
+  geom_tile(aes(fill = cor)) +
+  geom_text(aes(label = round(cor, 2)), size = 3) +
+  facet_grid(depth~horizon, labeller = label_both) +
+  labs(x='', y='')+
+  colorspace::scale_fill_continuous_diverging(limits = c(-1,1), palette = 'Blue-Red 2') +
+  theme_bw(base_size = 12) +
+  theme(panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        axis.ticks = element_blank())
 
-plot_5 <- ggpubr::ggarrange(h1_ccf, h7_ccf, h14_ccf, nrow = 1,
-                            labels = c('a)', 'b)', 'c)'),
-                            common.legend = T)
+figure5 <- ggpubr::ggarrange(h1_d1_ccf, h7_d1_ccf, h14_d1_ccf,
+                            h1_d8_ccf, h7_d8_ccf, h14_d8_ccf,
+                            common.legend = T, legend = 'top',
+                            labels = c('a)', 'b)', 'c)',
+                                       'd)', 'e)', 'f)'))
 
-ggsave(plot_5, filename = file.path(out_dir, 'plot_5.png'), height = 8, width = 21, units = 'cm')
+ggsave(figure5, filename = file.path(out_dir, 'figure5.png'), height = 17, width = 23, units = 'cm')
 #============================================#
 
 ##  FIGURE 6 - rank proportions ====
@@ -438,7 +517,7 @@ facet_tags <- expand.grid(depth = c(1,8),
                           model_id= all_models[!str_detect(all_models, '  ')]) |>
   mutate(tag = paste0(letters[1:14],')'))
 
-plot_6 <-
+figure6 <-
   all_scored %>%
   filter(reference_datetime != "2021-02-22 00:00:00",
          variable == 'temperature',
@@ -471,7 +550,7 @@ plot_6 <-
             mapping = aes(x = -0.12, y = 1.1, label = tag),
             size = 4, fontface = 'bold')
 
-ggsave(plot_6, filename = file.path(out_dir, 'plot_6.png'), height = 8, width = 25, units = 'cm')
+ggsave(figure6, filename = file.path(out_dir, 'figure6.png'), height = 8, width = 25, units = 'cm')
 
 #==============================================#
 
@@ -539,9 +618,9 @@ shadow_plot <-
                   xlim = c(0,14),
                   ylim = c(9,0))
 
-plot_7 <- ggpubr::ggarrange(logs_plot, shadow_plot, common.legend = T, widths = c(0.5, 1))
+figure7 <- ggpubr::ggarrange(logs_plot, shadow_plot, common.legend = T, widths = c(0.5, 1))
 
-ggsave(plot_7, filename = file.path(out_dir, 'plot_7.png'), height = 10, width = 17, units = 'cm')
+ggsave(figure7, filename = file.path(out_dir, 'figure7.png'), height = 10, width = 17, units = 'cm')
 #============================================#
 ## TABLE 1 - aggregated scores ====
 # aggregated scores
@@ -584,7 +663,7 @@ if (local == TRUE) {
   forecasts_parquets <- arrow::open_dataset(s3_ler)
 }
 
-param_values <- forecasts_parquet
+param_values <- forecasts_parquets |>
   filter(variable %in% param_config$par_names_save) |>
   collect()
 
@@ -595,7 +674,7 @@ layout_design <- "
   FG#
 "
 #only want the parameter values for the spin up (before forecast 0)
-plot_s1 <- param_values |>
+figure_s1 <- param_values |>
   filter(reference_datetime == '2021-02-22 00:00:00') |>
   ggplot(aes(x=datetime, y = prediction, group = parameter)) +
   geom_line(alpha = 0.2) +
@@ -608,7 +687,7 @@ plot_s1 <- param_values |>
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
   labs(x = 'Date', y = 'Parameter value')
 
-ggsave(plot_s1, filename = file.path(out_dir, 'plot_s1.png'), height = 20, width = 15, units = 'cm')
+ggsave(figure_s1, filename = file.path(out_dir, 'figure_s1.png'), height = 20, width = 15, units = 'cm')
 
 
 #===========================#
@@ -658,7 +737,7 @@ wc_mean_sd <-
   pull()
 
 
-plot_s2 <- mean_interday_sd |>
+figure_s2 <- mean_interday_sd |>
   ggplot(aes(x=mean_sd,  y=depth)) +
   geom_point() +
   geom_text(aes(label = round(mean_sd, 2)), size = 4, hjust = -0.1, vjust = -0.1) +
@@ -668,11 +747,11 @@ plot_s2 <- mean_interday_sd |>
   labs(x= 'Mean daily standard deviation (°C)', y= 'Depth (m)',
        caption = paste0('Note: Overall mean = ', wc_mean_sd))
 
-ggsave(plot_s2, filename = file.path(out_dir, 'plot_s2.png'), height = 10, width = 10, units = 'cm')
+ggsave(figure_s2, filename = file.path(out_dir, 'figure_s2.png'), height = 10, width = 10, units = 'cm')
 #===========================#
 
 ##  FIGURE S3 - Forecast time series =====
-plot_s3 <-
+figure_s3 <-
   all_scored %>%
   filter(variable == 'temperature',
          horizon %in%  c(1, 7, 14),
@@ -704,7 +783,7 @@ plot_s3 <-
         axis.title.y.right = element_text(vjust = 1.2),
         axis.title.x.top = element_text(vjust = 1.2))
 
-ggsave(plot_s3, filename = file.path(out_dir, 'plot_s3.png'), height = 11, width = 25, units = 'cm')
+ggsave(figure_s3, filename = file.path(out_dir, 'figure_s3.png'), height = 11, width = 25, units = 'cm')
 
 
 
@@ -719,7 +798,7 @@ facet_tags <- data.frame(depth = c(1,8),
                                  'c)', 'b)'))
 
 # plot of prportion of ranked forecasts
-plot_s4 <- all_scored %>%
+figure_s4 <- all_scored %>%
   filter(reference_datetime != "2021-02-22 00:00:00",
          variable == 'temperature',
          horizon %in% c(1:14),
@@ -752,7 +831,7 @@ plot_s4 <- all_scored %>%
             mapping = aes(x = -0, y = 1.08, label = tag),
             size = 4, fontface = 'bold')
 
-ggsave(plot_s4, filename = file.path(out_dir, 'plot_s4.png'), height = 12, width = 16, units = 'cm')
+ggsave(figure_s4, filename = file.path(out_dir, 'figure_s4.png'), height = 12, width = 16, units = 'cm')
 
 
 #===========================#
