@@ -76,7 +76,9 @@ inflow:
 met:
    use_forecasted_met: TRUE
    use_observed_met: FALSE
-   forecast_met_model: noaa/NOAAGEFS_1hr
+   local_directory: .na
+   observed_met_filename: .na
+   use_ler_vars: TRUE
    forecast_lag_days: 1
 uncertainty:
    observation: TRUE
@@ -88,4 +90,6 @@ uncertainty:
    inflow_process: TRUE
 output_settings:
    diagnostics_names: [extc]
+   evaluate_past: FALSE
+   variables_in_scores: [state, parameter]
 
