@@ -11,44 +11,27 @@ s3:
     bucket: drivers/noaa/gefs-v12-reprocess
   analysis:
     endpoint: s3.flare-forecast.org
-    bucket: analysis/ler_ms3
+    bucket: analysis/ler
   targets:
     endpoint: s3.flare-forecast.org
-    bucket: targets/ler_ms3
+    bucket: targets/ler
   forecasts:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts/ler_ms3
+    bucket: forecasts/
   forecasts_parquet:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts/ler_ms3/parquet
+    bucket: forecasts/parquet
   warm_start:
     endpoint: s3.flare-forecast.org
-    bucket: restart/ler_ms3
+    bucket: restart/
   scores:
     endpoint: s3.flare-forecast.org
-    bucket: scores/ler_ms3/parquet
+    bucket: scores/parquet
 location:
    site_id: fcre
    name: Falling Creek Reservoir
    latitude: 37.307   #Degrees North
    longitude: 79.837  #Degrees West
-metadata:
-   generate_eml: TRUE
-   forecast_project_id: test
-   abstract: "This is where a longer description of the forest can be added"
-   forecast_title: FLARE
-   intellectualRights: insert license
-   model_description:
-      forecast_model_id: https://github.com/rqthomas/flare/commit/d1ddcb07b9d28863890597503fc4aa4a4496de56
-      name: General Lake Model
-      type: process-based
-      repository: https://github.com/AquaticEcoDynamics/GLM/releases/tag/v3.1.0
-   me:
-      individualName:
-         givenName: "Quinn"
-         surName: "Thomas"
-      electronicMailAddress:  "INSERT"
-      id: INSERT ORCID
 da_setup:
     da_method: enkf
     par_fit_method: perturb_const
@@ -57,9 +40,10 @@ da_setup:
     no_negative_states: TRUE
     assimilate_first_step: FALSE
     use_obs_constraint: TRUE
+    obs_filename: fcre-targets-insitu.csv
 model_settings:
    ncore: 6
-   model: GLM #other is "null"
+   model: Simstrat #other is "null"
    base_GLM_nml: glm3.nml
    base_ler_yaml: LakeEnsemblR.yaml
    ler_bathymetry_file: LakeEnsemblR_bathymetry_standard.csv
@@ -91,7 +75,11 @@ inflow:
    forecast_inflow_model: inflow/FLOWS-NOAAGEFS-AR1
 met:
    use_forecasted_met: TRUE
-   forecast_met_model: noaa/NOAAGEFS_1hr
+   use_observed_met: FALSE
+   local_directory: .na
+   observed_met_filename: .na
+   use_ler_vars: TRUE
+   forecast_lag_days: 1
 uncertainty:
    observation: TRUE
    process: TRUE
@@ -102,4 +90,6 @@ uncertainty:
    inflow_process: TRUE
 output_settings:
    diagnostics_names: [extc]
+   evaluate_past: FALSE
+   variables_in_scores: [state, parameter]
 
