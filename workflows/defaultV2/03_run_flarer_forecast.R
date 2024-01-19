@@ -137,6 +137,9 @@ FLAREr:::unset_arrow_vars(vars)
 message("Combining forecasts")
 combined_forecasts <- dplyr::bind_rows(forecast_df, past_forecasts)
 
+rm(da_forecast_output)
+gc()
+
 message("Scoring forecasts")
 FLAREr::generate_forecast_score_arrow(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
                                       forecast_df = combined_forecasts,

@@ -1,2 +1,6 @@
-state_names_obs,obs_units,obs_sd,target_variable,distance_threshold,
-temp,degC,0.0782,temperature,0.15,0.5
+state_names_obs,obs_units,obs_sd,target_variable,distance_threshold
+temp,degC,0.1,Temp_C_mean,0.01
+OXY_oxy,mmol m-3,17.7,DO_mgL_mean,0.01
+OGM_doc_total,mmol m-3,18.7,fDOM_QSU_mean,0.01
+PHY_TCHLA,ug L,0.493,Chla_ugL_mean,0.01
+

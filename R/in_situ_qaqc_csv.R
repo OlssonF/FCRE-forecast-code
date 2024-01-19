@@ -11,12 +11,17 @@ in_situ_qaqc_csv <- function(insitu_obs_fname,
 
   print("QAQC Catwalk")
 
-  d <- temp_oxy_chla_qaqc(realtime_file = insitu_obs_fname[1],
+  d <- wq_realtime_edi_combine(realtime_file = insitu_obs_fname[1],
                           qaqc_file = insitu_obs_fname[2],
-                          maintenance_file = maintenance_file,
-                          input_file_tz = "EST",
-                          focal_depths = config$focal_depths,
-                          config = config)
+                          config = config,
+                          input_file_tz = "EST")
+
+  # d <- temp_oxy_chla_qaqc(realtime_file = insitu_obs_fname[1],
+  #                         qaqc_file = insitu_obs_fname[2],
+  #                         maintenance_file = maintenance_file,
+  #                         input_file_tz = "EST",
+  #                         focal_depths = config$focal_depths,
+  #                         config = config)
 
   if(exists("ctd_fname")){
     if(!is.na(ctd_fname)){
@@ -59,11 +64,20 @@ in_situ_qaqc_csv <- function(insitu_obs_fname,
     methods <- c(methods, paste(names(config$measurement_methods)[i], unlist(config$measurement_methods[[i]]), sep = "_"))
   }
 
+  d <- d |>
+    mutate(date = lubridate::as_date(time)) |>
+    mutate(time = ifelse(hour(time) > 1 & variable %in% c("NH4","NO3NO2","SRP","TN","TP"),
+                         lubridate::as_datetime(paste0(date, " 00:00:00")),
+                         lubridate::as_datetime(time)),
+           time = lubridate::as_datetime(time)) |>
+    select(-date)
+
+
   d_clean <- d |>
     dplyr::mutate(method = paste(variable, method, sep = "_")) |>
     dplyr::mutate(cuts = cut(depth, breaks = config$depths_bins_top, include.lowest = TRUE, right = FALSE, labels = FALSE)) |>
     dplyr::mutate(time = lubridate::as_date(time) + lubridate::hours(hour(time))) |>
-    dplyr::filter(lubridate::hour(time) == 0) |>
+    dplyr::filter((lubridate::hour(time) == 0)) |>
     dplyr::filter(method %in% methods) |>
     dplyr::group_by(cuts, variable, time) |>
     dplyr::summarize(observed = mean(observed, na.rm = TRUE), .groups = "drop") |>

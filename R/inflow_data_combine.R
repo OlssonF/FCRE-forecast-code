@@ -29,14 +29,14 @@
 #     setwd(diana_location)
 #     system(paste0("git pull"))
 #####
-inflow_qaqc_csv <- function(realtime_file,
-                        qaqc_file,
-                        nutrients_file,
-                        silica_file,
-                        co2_ch4,
-                        cleaned_inflow_file,
-                        input_file_tz,
-                        site_id){
+inflow_data_combine <- function(realtime_file,
+                            qaqc_file,
+                            nutrients_file,
+                            silica_file,
+                            co2_ch4,
+                            cleaned_inflow_file,
+                            input_file_tz,
+                            site_id){
 
   ##Step 2: Read in historical flow data, clean, and aggregate to daily mean##
 
@@ -64,10 +64,10 @@ inflow_qaqc_csv <- function(realtime_file,
   inflow_temp_flow <- tibble::tibble(time = seq(first(flow$time), last(flow$time), by = "1 day")) %>%
     dplyr::left_join(flow, by = "time") %>%
     dplyr::mutate(TEMP = ifelse(is.na(VT_Temp_C), WVWA_Temp_C, VT_Temp_C),
-           FLOW = ifelse(time > as_date("2019-06-07"), VT_Flow_cms, WVWA_Flow_cms),
-           SALT = 0) %>%
+                  FLOW = ifelse(time > as_date("2019-06-07"), VT_Flow_cms, WVWA_Flow_cms),
+                  SALT = 0) %>%
     dplyr::mutate(TEMP = imputeTS::na_interpolation(TEMP),
-           FLOW = imputeTS::na_interpolation(FLOW)) %>%
+                  FLOW = imputeTS::na_interpolation(FLOW)) %>%
     dplyr::select(time, FLOW, TEMP, SALT)
 
   ##Step 3: Read in diana data, convert flow from PSI to CSM, calculations to
@@ -75,49 +75,55 @@ inflow_qaqc_csv <- function(realtime_file,
   #aggregate to daily mean.##
 
   if(!is.na(realtime_file)){
+  inflow_realtime <- readr::read_csv(realtime_file, guess_max = 1000000, show_col_types = FALSE) %>%
+    dplyr::rename("timestamp" = DateTime) %>%
+    dplyr::mutate(timestamp = lubridate::as_datetime(timestamp, tz = input_file_tz),
+                  timestamp = lubridate::with_tz(timestamp, tzone = "UTC")) %>%
+    dplyr::select(timestamp, WVWA_Flow_cms, WVWA_Temp_C, VT_Flow_cms, VT_Temp_C) %>%
+    dplyr::mutate(date = as_date(timestamp)) %>%
+    dplyr::group_by(date) %>%
+    dplyr:: summarize(WVWA_Flow_cms = mean(WVWA_Flow_cms, na.rm = TRUE),
+                      WVWA_Temp_C = mean(WVWA_Temp_C, na.rm = TRUE),
+                      VT_Flow_cms = mean(VT_Flow_cms, na.rm = TRUE),
+                      VT_Temp_C = mean(VT_Temp_C, na.rm = TRUE), .groups = "drop") %>%
+    dplyr::ungroup() %>%
+    dplyr::select(date,WVWA_Flow_cms,WVWA_Temp_C,VT_Flow_cms,VT_Temp_C) %>%
+    dplyr::mutate(VT_Flow_cms = ifelse(is.nan(VT_Flow_cms), NA, VT_Flow_cms),
+                  VT_Temp_C = ifelse(is.nan(VT_Temp_C), NA, VT_Temp_C),
+                  WVWA_Flow_cms = ifelse(is.nan(WVWA_Flow_cms), NA, WVWA_Flow_cms),
+                  WVWA_Temp_C = ifelse(is.nan(WVWA_Temp_C), NA, WVWA_Temp_C)) %>%
+    dplyr::rename("time" = date) %>%
+    dplyr::filter(!is.na(time)) %>%
+    dplyr::arrange(time) %>%
+    dplyr::filter(time > max(inflow_temp_flow$time)) ##REMOVE LATER -- this is a placeholder until we do a PR for main repo
 
-    inflow_realtime <- readr::read_csv(realtime_file, guess_max = 1000000, show_col_types = FALSE) %>%
-      dplyr::rename("timestamp" = DateTime) %>%
-      dplyr::mutate(timestamp = lubridate::as_datetime(timestamp, tz = input_file_tz),
-                    timestamp = lubridate::with_tz(timestamp, tzone = "UTC")) %>%
-      dplyr::select(timestamp, WVWA_Flow_cms, WVWA_Temp_C, VT_Flow_cms, VT_Temp_C) %>%
-      dplyr::mutate(date = as_date(timestamp)) %>%
-      dplyr::group_by(date) %>%
-      dplyr:: summarize(WVWA_Flow_cms = mean(WVWA_Flow_cms, na.rm = TRUE),
-                        WVWA_Temp_C = mean(WVWA_Temp_C, na.rm = TRUE),
-                        VT_Flow_cms = mean(VT_Flow_cms, na.rm = TRUE),
-                        VT_Temp_C = mean(VT_Temp_C, na.rm = TRUE), .groups = "drop") %>%
-      dplyr::ungroup() %>%
-      dplyr::select(date,WVWA_Flow_cms,WVWA_Temp_C,VT_Flow_cms,VT_Temp_C) %>%
-      dplyr::mutate(VT_Flow_cms = ifelse(is.nan(VT_Flow_cms), NA, VT_Flow_cms),
-                    VT_Temp_C = ifelse(is.nan(VT_Temp_C), NA, VT_Temp_C),
-                    WVWA_Flow_cms = ifelse(is.nan(WVWA_Flow_cms), NA, WVWA_Flow_cms),
-                    WVWA_Temp_C = ifelse(is.nan(WVWA_Temp_C), NA, WVWA_Temp_C)) %>%
-      dplyr::rename("time" = date) %>%
-      dplyr::filter(!is.na(time)) %>%
-      dplyr::arrange(time)
+  inflow_realtime_temp_flow <- inflow_realtime %>%
+    dplyr::mutate(TEMP = ifelse(is.na(VT_Temp_C), WVWA_Temp_C, VT_Temp_C),
+                  FLOW = ifelse(time > as_date("2019-06-07"), VT_Flow_cms, WVWA_Flow_cms),
+                  SALT = 0) %>%
+    dplyr::mutate(TEMP = imputeTS::na_interpolation(TEMP),
+                  FLOW = imputeTS::na_interpolation(FLOW)) %>%
+    dplyr::select(time, FLOW, TEMP, SALT)
 
-    inflow_temp_flow_realtime <- tibble::tibble(time = seq(first(flow$time), last(flow$time), by = "1 day")) %>%
-      dplyr::left_join(flow, by = "time") %>%
-      dplyr::mutate(TEMP = ifelse(is.na(VT_Temp_C), WVWA_Temp_C, VT_Temp_C),
-                    FLOW = ifelse(time > as_date("2019-06-07"), VT_Flow_cms, WVWA_Flow_cms),
-                    SALT = 0) %>%
-      dplyr::mutate(TEMP = imputeTS::na_interpolation(TEMP),
-                    FLOW = imputeTS::na_interpolation(FLOW)) %>%
-      dplyr::select(time, FLOW, TEMP, SALT)
+  inflow_combined <- dplyr::full_join(inflow_temp_flow, inflow_realtime_temp_flow, by = "time") %>%
+    dplyr::mutate(FLOW = ifelse(is.na(FLOW.x), FLOW.y, FLOW.x),
+                  TEMP = ifelse(is.na(TEMP.x), TEMP.y, TEMP.x),
+                  SALT = ifelse(is.na(SALT.x), SALT.y, SALT.x)) %>%
+    dplyr::select(time, FLOW, TEMP, SALT)
 
-
-
-    inflow_combined <- dplyr::full_join(inflow_temp_flow, inflow_temp_flow_realtime, by = "time") %>%
-      dplyr::mutate(FLOW = ifelse(is.na(FLOW.x), FLOW.y, FLOW.x),
-             TEMP = ifelse(is.na(TEMP.x), TEMP.y, TEMP.x),
-             SALT = ifelse(is.na(SALT.x), SALT.y, SALT.x)) %>%
-      dplyr::select(time, FLOW, TEMP, SALT)
-
+  # inflow_combined <- tibble::tibble(time = seq(first(flow$time), last(flow$time), by = "1 day")) %>%
+  #   dplyr::left_join(flow, by = "time") %>%
+  #   dplyr::mutate(TEMP = ifelse(is.na(VT_Temp_C), WVWA_Temp_C, VT_Temp_C),
+  #                 FLOW = ifelse(time > as_date("2019-06-07"), VT_Flow_cms, WVWA_Flow_cms),
+  #                 SALT = 0) %>%
+  #   dplyr::mutate(TEMP = imputeTS::na_interpolation(TEMP),
+  #                 FLOW = imputeTS::na_interpolation(FLOW)) %>%
+  #   dplyr::select(time, FLOW, TEMP, SALT)
   }else{
-    inflow_combined <- inflow_temp_flow
+    inflow_combined <- inflow_temp_flow |>
     dplyr::select(time, FLOW, TEMP, SALT)
   }
+
 
   #### BRING IN THE NUTRIENTS
 
@@ -220,31 +226,31 @@ inflow_qaqc_csv <- function(realtime_file,
     weir_inflow <- alldata %>%
       dplyr::select(-c(Depth_m, Rep)) %>%
       dplyr::mutate(NIT_amm = NH4_ugL*1000*0.001*(1/18.04),
-             NIT_nit = NO3NO2_ugL*1000*0.001*(1/62.00), #as all NO2 is converted to NO3
-             PHS_frp = SRP_ugL*1000*0.001*(1/94.9714),
-             OGM_doc = DOC_mgL*1000*(1/12.01)* 0.10,  #assuming 10% of total DOC is in labile DOC pool (Wetzel page 753)
-             OGM_docr = 1.5*DOC_mgL*1000*(1/12.01)* 0.90, #assuming 90% of total DOC is in recalcitrant DOC pool
-             TN_ugL = TN_ugL*1000*0.001*(1/14),
-             TP_ugL = TP_ugL*1000*0.001*(1/30.97),
-             OGM_poc = 0.1*(OGM_doc+OGM_docr), #assuming that 10% of DOC is POC (Wetzel page 755
-             OGM_don = (5/6)*(TN_ugL-(NIT_amm+NIT_nit))*0.10, #DON is ~5x greater than PON (Wetzel page 220)
-             OGM_donr = (5/6)*(TN_ugL-(NIT_amm+NIT_nit))*0.90, #to keep mass balance with DOC, DONr is 90% of total DON
-             OGM_pon = (1/6)*(TN_ugL-(NIT_amm+NIT_nit)), #detemined by subtraction
-             OGM_dop = 0.3*(TP_ugL-PHS_frp)*0.10, #Wetzel page 241, 70% of total organic P = particulate organic; 30% = dissolved organic P
-             OGM_dopr = 0.3*(TP_ugL-PHS_frp)*0.90,#to keep mass balance with DOC & DON, DOPr is 90% of total DOP
-             OGM_pop = TP_ugL-(OGM_dop+OGM_dopr+PHS_frp), # #In lieu of having the adsorbed P pool activated in the model, need to have higher complexed P
-             CAR_dic = DIC_mgL*1000*(1/52.515),
-             OXY_oxy = rMR::Eq.Ox.conc(TEMP, elevation.m = 506, #creating OXY_oxy column using RMR package, assuming that oxygen is at 100% saturation in this very well-mixed stream
-                                       bar.press = NULL, bar.units = NULL,
-                                       out.DO.meas = "mg/L",
-                                       salinity = 0, salinity.units = "pp.thou"),
-             OXY_oxy = OXY_oxy *1000*(1/32),
-             PHY_cyano = 0,
-             PHY_green = 0,
-             PHY_diatom = 0,
-             SIL_rsi = median(silica$DRSI_mgL),
-             SIL_rsi = SIL_rsi*1000*(1/60.08),
-             SALT = 0) %>%
+                    NIT_nit = NO3NO2_ugL*1000*0.001*(1/62.00), #as all NO2 is converted to NO3
+                    PHS_frp = SRP_ugL*1000*0.001*(1/94.9714),
+                    OGM_doc = DOC_mgL*1000*(1/12.01)* 0.10,  #assuming 10% of total DOC is in labile DOC pool (Wetzel page 753)
+                    OGM_docr = 1.5*DOC_mgL*1000*(1/12.01)* 0.90, #assuming 90% of total DOC is in recalcitrant DOC pool
+                    TN_ugL = TN_ugL*1000*0.001*(1/14),
+                    TP_ugL = TP_ugL*1000*0.001*(1/30.97),
+                    OGM_poc = 0.1*(OGM_doc+OGM_docr), #assuming that 10% of DOC is POC (Wetzel page 755
+                    OGM_don = (5/6)*(TN_ugL-(NIT_amm+NIT_nit))*0.10, #DON is ~5x greater than PON (Wetzel page 220)
+                    OGM_donr = (5/6)*(TN_ugL-(NIT_amm+NIT_nit))*0.90, #to keep mass balance with DOC, DONr is 90% of total DON
+                    OGM_pon = (1/6)*(TN_ugL-(NIT_amm+NIT_nit)), #detemined by subtraction
+                    OGM_dop = 0.3*(TP_ugL-PHS_frp)*0.10, #Wetzel page 241, 70% of total organic P = particulate organic; 30% = dissolved organic P
+                    OGM_dopr = 0.3*(TP_ugL-PHS_frp)*0.90,#to keep mass balance with DOC & DON, DOPr is 90% of total DOP
+                    OGM_pop = TP_ugL-(OGM_dop+OGM_dopr+PHS_frp), # #In lieu of having the adsorbed P pool activated in the model, need to have higher complexed P
+                    CAR_dic = DIC_mgL*1000*(1/52.515),
+                    OXY_oxy = rMR::Eq.Ox.conc(TEMP, elevation.m = 506, #creating OXY_oxy column using RMR package, assuming that oxygen is at 100% saturation in this very well-mixed stream
+                                              bar.press = NULL, bar.units = NULL,
+                                              out.DO.meas = "mg/L",
+                                              salinity = 0, salinity.units = "pp.thou"),
+                    OXY_oxy = OXY_oxy *1000*(1/32),
+                    PHY_cyano = 0,
+                    PHY_green = 0,
+                    PHY_diatom = 0,
+                    SIL_rsi = median(silica$DRSI_mgL),
+                    SIL_rsi = SIL_rsi*1000*(1/60.08),
+                    SALT = 0) %>%
       dplyr::mutate_if(is.numeric, round, 4) #round to 4 digits
 
     #Long-term median pH of FCR is 6.5, at which point CO2/HCO3 is about 50-50

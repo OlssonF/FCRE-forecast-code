@@ -2,343 +2,369 @@ library(tidyverse)
 library(lubridate)
 set.seed(100)
 
-#remotes::install_github("FLARE-forecast/GLM3r")
+options(future.globals.maxSize= 891289600)
+
 Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
 
 lake_directory <- here::here()
 
-
-starting_index <- 1
-
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
-sapply(files.sources, source)
+purrr::walk(files.sources, source)
 
-sim_names <- "ms_glmead3.3"
 config_set_name <- "glm_aed"
+configure_run_file <- "configure_run.yml"
 
-config_files <- paste0("configure_flare_glm_aed.yml")
-
-#num_forecasts <- 52 * 3 - 3
-num_forecasts <- 2 #52 * 3 - 3
-#num_forecasts <- 1#19 * 7 + 1
-days_between_forecasts <- 7
-forecast_horizon <- 16 #32
-starting_date <- as_date("2018-07-20")
-#second_date <- as_date("2020-12-01") - days(days_between_forecasts)
-#starting_date <- as_date("2018-07-20")
-second_date <- as_date("2018-08-20") - days(days_between_forecasts)
-#second_date <- as_date("2019-01-01") - days(days_between_forecasts)
-
-#second_date <- as_date("2018-08-01") - days(days_between_forecasts)
-
-start_dates <- rep(NA, num_forecasts)
-start_dates[1:2] <- c(starting_date, second_date)
-for(i in 3:(3 + num_forecasts)){
-  start_dates[i] <- as_date(start_dates[i-1]) + days(days_between_forecasts)
-}
-
-start_dates <- as_date(start_dates)
-forecast_start_dates <- start_dates + days(days_between_forecasts)
-forecast_start_dates <- forecast_start_dates[-1]
-
-configure_run_file <- "configure_aed_run.yml"
-
-j = 1
-sites <- "fcre"
-
-#function(i, sites, lake_directory, sim_names, config_files, )
-
-message(paste0("Running site: ", sites[j]))
-
-if(starting_index == 1){
-  run_config <- yaml::read_yaml(file.path(lake_directory, "configuration", config_set_name, configure_run_file))
-  run_config$configure_flare <- config_files[j]
-  run_config$sim_name <- sim_names
-  yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", config_set_name, configure_run_file))
-  if(file.exists(file.path(lake_directory, "restart", sites[j], sim_names, configure_run_file))){
-    unlink(file.path(lake_directory, "restart", sites[j], sim_names, configure_run_file))
-  }
-}
-
-##'
-# Set up configurations for the data processing
-config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml", config_set_name = config_set_name)
 config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
+config <- FLAREr::get_restart_file(config, lake_directory)
 
-use_s3 <- FALSE
+#message(paste0("     Running forecast that starts on: ", config$run_config$start_datetime))
 
-#' Clone or pull from data repositories
+#Need to remove the 00 ensemble member because it only goes 16-days in the future
 
-FLAREr::get_git_repo(lake_directory,
-                     directory = config_obs$realtime_insitu_location,
-                     git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
-
-FLAREr::get_git_repo(lake_directory,
-                     directory = config_obs$realtime_met_station_location,
-                     git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
-
-FLAREr::get_git_repo(lake_directory,
-                     directory = config_obs$realtime_inflow_data_location,
-                     git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
-
-#get_git_repo(lake_directory,
-#             directory = config_obs$manual_data_location,
-#             git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
-
-#' Download files from EDI
-
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/5/3d1866fecfb8e17dc902c76436239431",
-                     file = config_obs$met_raw_obs_fname[2],
-                     lake_directory)
-
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/5/c1b1f16b8e3edbbff15444824b65fe8f",
-                     file = config_obs$insitu_obs_fname[2],
-                     lake_directory)
-
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/198/8/336d0a27c4ae396a75f4c07c01652985",
-                     file = config_obs$secchi_fname,
-                     lake_directory)
-
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/200/11/d771f5e9956304424c3bc0a39298a5ce",
-                     file = config_obs$ctd_fname,
-                     lake_directory)
-
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/199/8/da174082a3d924e989d3151924f9ef98",
-                     file = config_obs$nutrients_fname,
-                     lake_directory)
+#pars_config <- NULL #readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$par_config_file), col_types = readr::cols())
+pars_config <- NULL #readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$par_config_file), col_types = readr::cols())
+obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$obs_config_file), col_types = readr::cols())
+states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$states_config_file), col_types = readr::cols())
 
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/202/7/f5fa5de4b49bae8373f6e7c1773b026e",
-                     file = config_obs$inflow_raw_file1[2],
-                     lake_directory)
+met_start_datetime <- lubridate::as_datetime(config$run_config$start_datetime)
+met_forecast_start_datetime <- lubridate::as_datetime(config$run_config$forecast_start_datetime)
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/542/1/791ec9ca0f1cb9361fa6a03fae8dfc95",
-                     file = "silica_master_df.csv",
-                     lake_directory)
-
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/551/5/38d72673295864956cccd6bbba99a1a3",
-                     file = "Dissolved_CO2_CH4_Virginia_Reservoirs.csv",
-                     lake_directory)
-
-
-#' Clean up observed meterology
-
-cleaned_met_file <- met_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
-                             qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
-                             cleaned_met_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id,paste0("observed-met_",config_obs$site_id,".nc")),
-                             input_file_tz = "EST",
-                             nldas = NULL)
-
-#' Clean up observed inflow
-
-cleaned_inflow_file <- inflow_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[1]),
-                                   qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[2]),
-                                   nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
-                                   silica_file = file.path(config_obs$file_path$data_directory,  config_obs$silica_fname),
-                                   co2_ch4 = file.path(config_obs$file_path$data_directory, config_obs$ch4_fname),
-                                   cleaned_inflow_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id, paste0(config_obs$site_id,"-targets-inflow.csv")),
-                                   input_file_tz = 'EST')
-
-#' Clean up observed insitu measurements
-
-cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(config_obs$file_path$data_directory,config_obs$insitu_obs_fname),
-                                    data_location = config_obs$file_path$data_directory,
-                                    maintenance_file = file.path(config_obs$file_path$data_directory,config_obs$maintenance_file),
-                                    ctd_fname = file.path(config_obs$file_path$data_directory, config_obs$ctd_fname),
-                                    nutrients_fname =  file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
-                                    secchi_fname = file.path(config_obs$file_path$data_directory, config_obs$secchi_fname),
-                                    ch4_fname = file.path(config_obs$file_path$data_directory, config_obs$ch4_fname),
-                                    cleaned_insitu_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
-                                    lake_name_code = config_obs$site_id,
-                                    config = config_obs)
-
-##` Download NOAA forecasts`
-
-message("    Downloading NOAA data")
-
-cycle <- "00"
-
-for(i in 1:length(forecast_start_dates)){
-  noaa_forecast_path <- file.path(config$met$forecast_met_model, config$location$site_id, forecast_start_dates[i], "00")
-  if(length(list.files(file.path(lake_directory,"drivers", noaa_forecast_path))) == 0){
-  FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
+if(config$run_config$forecast_horizon > 16 & config$met$use_forecasted_met & !config$met$use_openmeteo){
+  met_forecast_start_datetime <- met_forecast_start_datetime - lubridate::days(1)
+  if(met_forecast_start_datetime < met_start_datetime){
+    met_start_datetime <- met_forecast_start_datetime
+    message("horizon is > 16 days so adjusting forecast_start_datetime in the met file generation to use yesterdays forecast. But adjusted forecast_start_datetime < start_datetime")
   }
 }
 
-available_dates <- list.files(file.path(lake_directory,"drivers","noaa","NOAAGEFS_1hr","fcre"))
-
-if(starting_index == 1){
-  config$run_config$start_datetime <- as.character(paste0(start_dates[1], " 00:00:00"))
-  config$run_config$forecast_start_datetime <- as.character(paste0(start_dates[2], " 00:00:00"))
-  config$run_config$forecast_horizon <- 0
-  config$run_config$restart_file <- NA
-  run_config <- config$run_config
-  yaml::write_yaml(run_config, file = file.path(config$file_path$configuration_directory, configure_run_file))
-}
-
-#for(i in 1:1){
-for(i in starting_index:length(forecast_start_dates)){
-
-  https_file <- "https://raw.githubusercontent.com/cayelan/FCR-GLM-AED-Forecasting/master/FCR_2013_2019GLMHistoricalRun_GLMv3beta/inputs/FCR_SSS_inflow_2013_2021_20211102_allfractions_2DOCpools.csv"
-  if(!file.exists(file.path(config$file_path$execute_directory, basename(https_file)))){
-  download.file(https_file,
-                file.path(config$file_path$execute_directory, basename(https_file)))
-  }
 
 
-    config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
 
-    num_dates_skipped <- 1
-    while(!lubridate::as_date(config$run_config$forecast_start_datetime) %in% lubridate::as_date(available_dates) & (i <= length(forecast_start_dates) & i > 1)){
-      print("here")
-      FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file = NA, new_horizon = forecast_horizon, day_advance = num_dates_skipped * days_between_forecasts, new_start_datetime = FALSE)
-      config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
-      num_dates_skipped <- num_dates_skipped + 1
-      i <- i + 1
-    }
+met_out <- FLAREr::generate_met_files_arrow(out_dir = config$file_path$execute_directory,
+                                      start_datetime = met_start_datetime,
+                                      end_datetime = config$run_config$end_datetime,
+                                      forecast_start_datetime = met_forecast_start_datetime,
+                                      forecast_horizon =  config$run_config$forecast_horizon,
+                                      site_id = config$location$site_id,
+                                      use_s3 = TRUE,
+                                      bucket = config$s3$drivers$bucket,
+                                      endpoint = config$s3$drivers$endpoint,
+                                      use_siteid_s3 = TRUE)
 
-      config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
-      config <- FLAREr::get_restart_file(config, lake_directory)
+# met_out <- FLAREr::generate_met_files_openmet(out_dir = config$file_path$execute_directory,
+#                                               start_datetime = lubridate::as_datetime(config$run_config$start_datetime),
+#                                               end_datetime = config$run_config$end_datetime,
+#                                               forecast_start_datetime = lubridate::as_datetime(config$run_config$forecast_start_datetime),
+#                                               forecast_horizon =  config$run_config$forecast_horizon,
+#                                               latitude = config$location$latitude,
+#                                               longitude = config$location$longitude,
+#                                               site_id = config$location$site_id,
+#                                               openmeteo_api = config$met$openmeteo_api,
+#                                               model = config$met$openmeteo_model,
+#                                               use_archive = config$met$use_openmeteo_archive,
+#                                               bucket = config$s3$drivers$bucket,
+#                                               endpoint = config$s3$drivers$endpoint)
 
-      message(paste0("     Running forecast that starts on: ", config$run_config$start_datetime))
-
-      if(config$run_config$forecast_horizon > 0){
-        noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
-                                                               forecast_model = config$met$forecast_met_model)
-        forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
-      }else{
-        forecast_dir <- NULL
-      }
-
-      inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
-                                                               forecast_model = config$inflow$forecast_inflow_model)
-
-      if(!is.null(inflow_forecast_path)){
-        FLAREr::get_driver_forecast(lake_directory, forecast_path = inflow_forecast_path)
-        inflow_file_dir <- file.path(config$file_path$noaa_directory,inflow_forecast_path)
-      }else{
-        inflow_file_dir <- NULL
-      }
-
-
-      config$future_inflow_flow_coeff <- c(0.0010803, 0.9478724, 0.3478991)
-      config$future_inflow_flow_error <- 0.00965
-      config$future_inflow_temp_coeff <- c(0.20291, 0.94214, 0.04278)
-      config$future_inflow_temp_error <- 0.943
-
-      forecast_files <- list.files(file.path(lake_directory, "drivers", noaa_forecast_path), full.names = TRUE)
-      temp_flow_forecast <- forecast_inflows_outflows(inflow_obs = file.path(config$file_path$qaqc_data_directory, "fcre-targets-inflow.csv"),
-                                                        forecast_files = forecast_files,
-                                                        obs_met_file = file.path(config$file_path$qaqc_data_directory,"observed-met_fcre.nc"),
-                                                        output_dir = config$file_path$inflow_directory,
-                                                        inflow_model = config$inflow$forecast_inflow_model,
-                                                        inflow_process_uncertainty = FALSE,
-                                                        forecast_location = config$file_path$forecast_output_directory,
-                                                        config = config,
-                                                        use_s3 = config$run_config$use_s3,
-                                                        bucket = "drivers",
-                                                        model_name = config$model_settings$model_name)
-
-      #Need to remove the 00 ensemble member because it only goes 16-days in the future
-
-      #pars_config <- NULL #readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$par_config_file), col_types = readr::cols())
-      pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$par_config_file), col_types = readr::cols())
-      obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$obs_config_file), col_types = readr::cols())
-      states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$states_config_file), col_types = readr::cols())
+variables <- c("datetime", "FLOW", "TEMP", "SALT",
+               'OXY_oxy',
+               'CAR_dic',
+               'CAR_ch4',
+               'SIL_rsi',
+               'NIT_amm',
+               'NIT_nit',
+               'PHS_frp',
+               'OGM_doc',
+               'OGM_docr',
+               'OGM_poc',
+               'OGM_don',
+               'OGM_donr',
+               'OGM_pon',
+               'OGM_dop',
+               'OGM_dopr',
+               'OGM_pop',
+               'PHY_cyano',
+               'PHY_green',
+               'PHY_diatom')
 
 
-      #Download and process observations (already done)
+targets_vera <- readr::read_csv("https://renc.osn.xsede.org/bio230121-bucket01/vera4cast/targets/project_id=vera4cast/duration=P1D/daily-inflow-targets.csv.gz",
+                                show_col_types = FALSE)
 
-      met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
-                                                out_dir = config$file_path$execute_directory,
-                                                forecast_dir = forecast_dir,
-                                                config = config)
+inflow_hist_dates <- tibble(datetime = seq(min(targets_vera$datetime), max(targets_vera$datetime), by = "1 day"))
 
-      inflow_outflow_files <- FLAREr::create_glm_inflow_outflow_files(inflow_file_dir = inflow_file_dir,
-                                                                      inflow_obs = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")),
-                                                                      working_directory = config$file_path$execute_directory,
-                                                                      config = config,
-                                                                      state_names = states_config$state_names)
+targets_vera |>
+  filter(!variable %in% c("DN_mgL_sample", "DC_mgL_sample")) |>
+  select(datetime, variable, observation) |>
+  pivot_wider(names_from = variable, values_from = observation) |>
+  right_join(inflow_hist_dates, by = "datetime") |>
+  mutate(across(Flow_cms_mean:DIC_mgL_sample, imputeTS::na_interpolation)) |>
+  tidyr::fill(Flow_cms_mean:DIC_mgL_sample, .direction = "up") |>
+  tidyr::fill(Flow_cms_mean:DIC_mgL_sample, .direction = "down") |>
+  dplyr::rename(TEMP = Temp_C_mean,
+                FLOW = Flow_cms_mean) |>
+  dplyr::mutate(NIT_amm = NH4_ugL_sample*1000*0.001*(1/18.04),
+                NIT_nit = NO3NO2_ugL_sample*1000*0.001*(1/62.00), #as all NO2 is converted to NO3
+                PHS_frp = SRP_ugL_sample*1000*0.001*(1/94.9714),
+                OGM_doc = DOC_mgL_sample*1000*(1/12.01)* 0.10,  #assuming 10% of total DOC is in labile DOC pool (Wetzel page 753)
+                OGM_docr = 1.5*DOC_mgL_sample*1000*(1/12.01)* 0.90, #assuming 90% of total DOC is in recalcitrant DOC pool
+                TN_ugL = TN_ugL_sample*1000*0.001*(1/14),
+                TP_ugL = TP_ugL_sample*1000*0.001*(1/30.97),
+                OGM_poc = 0.1*(OGM_doc+OGM_docr), #assuming that 10% of DOC is POC (Wetzel page 755
+                OGM_don = (5/6)*(TN_ugL_sample-(NIT_amm+NIT_nit))*0.10, #DON is ~5x greater than PON (Wetzel page 220)
+                OGM_donr = (5/6)*(TN_ugL_sample-(NIT_amm+NIT_nit))*0.90, #to keep mass balance with DOC, DONr is 90% of total DON
+                OGM_pon = (1/6)*(TN_ugL_sample-(NIT_amm+NIT_nit)), #detemined by subtraction
+                OGM_dop = 0.3*(TP_ugL_sample-PHS_frp)*0.10, #Wetzel page 241, 70% of total organic P = particulate organic; 30% = dissolved organic P
+                OGM_dopr = 0.3*(TP_ugL_sample-PHS_frp)*0.90,#to keep mass balance with DOC & DON, DOPr is 90% of total DOP
+                OGM_pop = TP_ugL_sample-(OGM_dop+OGM_dopr+PHS_frp), # #In lieu of having the adsorbed P pool activated in the model, need to have higher complexed P
+                CAR_dic = DIC_mgL_sample*1000*(1/52.515),
+                OXY_oxy = rMR::Eq.Ox.conc(TEMP, elevation.m = 506, #creating OXY_oxy column using RMR package, assuming that oxygen is at 100% saturation in this very well-mixed stream
+                                          bar.press = NULL, bar.units = NULL,
+                                          out.DO.meas = "mg/L",
+                                          salinity = 0, salinity.units = "pp.thou"),
+                OXY_oxy = OXY_oxy *1000*(1/32),
+                CAR_ch4 = CH4_umolL_sample,
+                PHY_cyano = 0,
+                PHY_green = 0,
+                PHY_diatom = 0,
+                SIL_rsi = DRSI_mgL_sample*1000*(1/60.08),
+                SALT = 0) |>
+  dplyr::mutate_if(is.numeric, round, 4) |>
+  dplyr::select(dplyr::any_of(variables)) |>
+  tidyr::pivot_longer(-c("datetime"), names_to = "variable", values_to = "observation") |>
+  dplyr::select(datetime, variable, observation) |>
+  readr::write_csv(file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")))
 
-      management <- NULL
+inflow_forecast_dir <- "inflow"
+convert_vera4cast_inflow(reference_date = lubridate::as_date(config$run_config$forecast_start_datetime),
+                           model_id = "inflow_gefsClimAED",
+                           save_path = file.path(lake_directory, "drivers", inflow_forecast_dir))
 
-      if(config$model_settings$model_name == "glm_aed"){
 
-        inflow_outflow_files$inflow_file_name <- cbind(inflow_outflow_files$inflow_file_name, rep(file.path(config$file_path$execute_directory,basename(https_file)), length(inflow_outflow_files$inflow_file_name)))
-      }
+inflow_outflow_files <- FLAREr::create_inflow_outflow_files_arrow(inflow_forecast_dir = inflow_forecast_dir,
+                                                          inflow_obs = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")),
+                                                          variables = variables,
+                                                          out_dir = config$file_path$execute_directory,
+                                                          start_datetime = config$run_config$start_datetime,
+                                                          end_datetime = config$run_config$end_datetime,
+                                                          forecast_start_datetime = config$run_config$forecast_start_datetime,
+                                                          forecast_horizon =  config$run_config$forecast_horizon,
+                                                          site_id = config$location$site_id,
+                                                          use_s3 = FALSE,
+                                                          bucket = config$s3$inflow_drivers$bucket,
+                                                          endpoint = config$s3$inflow_drivers$endpoint,
+                                                          local_directory = file.path(lake_directory, "drivers", inflow_forecast_dir),
+                                                          use_forecast = TRUE,
+                                                          use_ler_vars = FALSE)
 
-      #Create observation matrix
-      obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
-                                       obs_config = obs_config,
-                                       config)
+inflow_outflow_files$inflow_file_names <- inflow_outflow_files$inflow_file_names[which(stringr::str_detect(inflow_outflow_files$inflow_file_names, "ens32", negate = TRUE))]
+inflow_outflow_files$outflow_file_names <- inflow_outflow_files$outflow_file_names[which(stringr::str_detect(inflow_outflow_files$outflow_file_names, "ens32", negate = TRUE))]
 
-      #obs[ ,2:dim(obs)[2], ] <- NA
 
-      states_config <- FLAREr::generate_states_to_obs_mapping(states_config, obs_config)
+readr::read_csv("https://renc.osn.xsede.org/bio230121-bucket01/vera4cast/targets/project_id=vera4cast/duration=P1D/daily-insitu-targets.csv.gz", show_col_types = FALSE) |>
+  dplyr::mutate(observation = ifelse(variable == "DO_mgL_mean", observation*1000*(1/32), observation),
+                observation = ifelse(variable == "fDOM_QSU_mean", -151.3407 + observation*29.62654, observation),
+                depth_m = ifelse(depth_m == 0.1, 0.0, depth_m)) |>
+  dplyr::rename(depth = depth_m) |>
+  dplyr::filter(site_id == "fcre",
+                datetime >= as_datetime(config$run_config$start_datetime)) |>
+  readr::write_csv(file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")))
 
-      model_sd <- FLAREr::initiate_model_error(config, states_config)
 
-      init <- FLAREr::generate_initial_conditions(states_config,
-                                                  obs_config,
-                                                  pars_config,
-                                                  obs,
-                                                  config,
-                                                  historical_met_error = met_out$historical_met_error)
-      #Run EnKF
-      da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
-                                                    pars_init = init$pars,
-                                                    aux_states_init = init$aux_states_init,
-                                                    obs = obs,
-                                                    obs_sd = obs_config$obs_sd,
-                                                    model_sd = model_sd,
-                                                    working_directory = config$file_path$execute_directory,
-                                                    met_file_names = met_out$filenames,
-                                                    inflow_file_names = inflow_outflow_files$inflow_file_name,
-                                                    outflow_file_names = inflow_outflow_files$outflow_file_name,
-                                                    config = config,
-                                                    pars_config = pars_config,
-                                                    states_config = states_config,
-                                                    obs_config = obs_config,
-                                                    management,
-                                                    da_method = config$da_setup$da_method,
-                                                    par_fit_method = config$da_setup$par_fit_method)
+#Create observation matrix
+obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
+                                 obs_config = obs_config,
+                                 config)
 
-      # Save forecast
+obs_secchi_depth <- get_obs_secchi_depth(obs_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
+                                         start_datetime = config$run_config$start_datetime,
+                                         end_datetime = config$run_config$end_datetime,
+                                         forecast_start_datetime = config$run_config$forecast_start_datetime,
+                                         forecast_horizon =  config$run_config$forecast_horizon,
+                                         secchi_sd = 0.1)
 
-      saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
-                                                  forecast_output_directory = config$file_path$forecast_output_directory,
-                                                  use_short_filename = TRUE)
+#obs_secchi_depth <- NULL
+#obs[ ,2:dim(obs)[2], ] <- NA
 
-      forecast_file <- FLAREr::write_forecast_csv(da_forecast_output = da_forecast_output,
-                                                  forecast_output_directory = config$file_path$forecast_output_directory,
-                                                  use_short_filename = TRUE)
+states_config <- FLAREr::generate_states_to_obs_mapping(states_config, obs_config)
 
-      forecast_file <- write_forecast_csv(da_forecast_output = da_forecast_output,
-                                                  forecast_output_directory = config$file_path$forecast_output_directory,
-                                                  use_short_filename = TRUE)
+model_sd <- FLAREr::initiate_model_error(config, states_config)
 
-      dir.create(file.path(lake_directory, "scores", config$location$site_id, config$run_config$sim_name), recursive = TRUE, showWarnings = FALSE)
-      FLAREr::generate_forecast_score(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
-                                      forecast_file = forecast_file,
-                                      output_directory = file.path(lake_directory, "scores", config$location$site_id, config$run_config$sim_name))
+init <- FLAREr::generate_initial_conditions(states_config,
+                                            obs_config,
+                                            pars_config,
+                                            obs,
+                                            config,
+                                            historical_met_error = met_out$historical_met_error)
+#Run EnKF
+da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
+                                              pars_init = init$pars,
+                                              aux_states_init = init$aux_states_init,
+                                              obs = obs,
+                                              obs_sd = obs_config$obs_sd,
+                                              model_sd = model_sd,
+                                              working_directory = config$file_path$execute_directory,
+                                              met_file_names = met_out$filenames,
+                                              inflow_file_names = inflow_outflow_files$inflow_file_name,
+                                              outflow_file_names = inflow_outflow_files$outflow_file_name,
+                                              config = config,
+                                              pars_config = pars_config,
+                                              states_config = states_config,
+                                              obs_config = obs_config,
+                                              management = NULL,
+                                              da_method = config$da_setup$da_method,
+                                              par_fit_method = config$da_setup$par_fit_method,
+                                              obs_secchi = obs_secchi_depth$obs_secchi,
+                                              obs_depth = obs_secchi_depth$obs_depth)
 
-      #Create EML Metadata
-      eml_file_name <- FLAREr::create_flare_metadata(file_name = saved_file,
-                                                     da_forecast_output = da_forecast_output)
+# Save forecast
 
-      #rm(da_forecast_output)
-      #gc()
-      message("Generating plot")
-      FLAREr::plotting_general_2(file_name = saved_file,
-                                 target_file = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
-                                 ncore = 2,
-                                 obs_csv = FALSE)
+saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
+                                            forecast_output_directory = config$file_path$forecast_output_directory,
+                                            use_short_filename = TRUE)
 
-      FLAREr::put_forecast(saved_file, eml_file_name, config)
+forecast_df <- FLAREr::write_forecast_arrow(da_forecast_output = da_forecast_output,
+                                            use_s3 = config$run_config$use_s3,
+                                            bucket = config$s3$forecasts_parquet$bucket,
+                                            endpoint = config$s3$forecasts_parquet$endpoint,
+                                            local_directory = file.path(lake_directory, "forecasts/parquet"))
 
-      new_time <- as.character(lubridate::as_datetime(config$run_config$forecast_start_datetime) +
-                                                                   lubridate::days(days_between_forecasts))
+vera_variables <- c("Temp_C_mean","Chla_ugL_mean", "DO_mgL_mean", "fDOM_QSU_mean", "NH4_ugL_sample",
+                    "NO3NO2_ugL_sample", "SRP_ugL_sample", "DIC_mgL_sample","Secchi_m_sample",
+                    "Bloom_binary_mean","CH4_umolL_sample","IceCover_binary_max")
 
-      FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = forecast_horizon, day_advance = days_between_forecasts)
-}
+# Calculate probablity of bloom
+bloom_binary <- forecast_df |>
+  dplyr::filter(depth == 1.6 & variable == "Chla_ugL_mean") |>
+  dplyr::mutate(over = ifelse(prediction > 20, 1, 0)) |>
+  dplyr::summarize(prediction = sum(over) / n(), .by = c(datetime, reference_datetime, pubDate, model_id, site_id, depth, variable)) |>
+  dplyr::mutate(family = "bernoulli",
+                parameter = "prob",
+                variable = "Bloom_binary_mean") |>
+  dplyr::rename(depth_m = depth) |>
+  dplyr::select(reference_datetime, datetime, model_id, site_id, depth_m, family, parameter, variable, prediction)
+
+# Calculate probablity of having ice
+ice_binary <- forecast_df |>
+  dplyr::filter(variable == "ice_thickness") |>
+  dplyr::mutate(over = ifelse(prediction > 0, 1, 0)) |>
+  dplyr::summarize(prediction = sum(over) / n(), .by = c(datetime, reference_datetime, pubDate, model_id, site_id, depth, variable)) |>
+  dplyr::mutate(family = "bernoulli",
+                parameter = "prob",
+                variable = "IceCover_binary_max",
+                depth = NA) |>
+  dplyr::rename(depth_m = depth) |>
+  dplyr::select(reference_datetime, datetime, model_id, site_id, depth_m, family, parameter, variable, prediction)
+
+# Calculate probablity of being mixed
+min_depth <- 1
+max_depth <- 8
+threshold <- 0.1
+
+temp_forecast <- forecast_df |>
+  filter(depth %in% c(min_depth, max_depth),
+         variable == "Temp_C_mean") |>
+  pivot_wider(names_from = depth, names_prefix = 'wtr_', values_from = prediction)
+
+colnames(temp_forecast)[which(colnames(temp_forecast) == paste0('wtr_', min_depth))] <- 'min_depth'
+colnames(temp_forecast)[which(colnames(temp_forecast) == paste0('wtr_', max_depth))] <- 'max_depth'
+
+mix_binary <- temp_forecast |>
+  mutate(min_depth = rLakeAnalyzer::water.density(min_depth),
+         max_depth = rLakeAnalyzer::water.density(max_depth),
+         mixed = ifelse((max_depth - min_depth) < threshold, 1, 0)) |>
+  summarise(prediction = 100*(sum(mixed)/n()), .by = c(datetime, reference_datetime, pubDate, model_id, site_id, variable)) |>
+  dplyr::mutate(family = "bernoulli",
+                parameter = "prob",
+                variable = "Mixed_binary_sample",
+                depth = NA) |>
+  dplyr::rename(depth_m = depth) |>
+  dplyr::select(reference_datetime, datetime, model_id, site_id, depth_m, family, parameter, variable, prediction)
+
+
+# Combine into a vera data frame
+vera4cast_df <- forecast_df |>
+  dplyr::rename(depth_m = depth) |>
+  dplyr::mutate(prediction = ifelse(variable == "DO_mgL_mean", prediction/1000*(32),prediction),
+                prediction = ifelse(variable == "fDOM_QSU_mean", 151.3407 + prediction/29.62654,prediction),
+                prediction = ifelse(variable == "NIT_amm", prediction/1000/0.001/(1/18.04),prediction),
+                variable = ifelse(variable == "NIT_amm", "NH4_ugL_sample", variable),
+                prediction = ifelse(variable == "NIT_nit", prediction/1000/0.001/(1/62.00),prediction),
+                variable = ifelse(variable == "NIT_amm", "NO3NO2_ugL_sample", variable),
+                prediction = ifelse(variable == "PHS_frp", prediction/1000/0.001/(1/94.9714),prediction),
+                variable = ifelse(variable == "PHS_frp", "SRP_ugL_sample", variable),
+                prediction = ifelse(variable == "CAR_dic", prediction/1000/(1/52.515), prediction),
+                variable = ifelse(variable == "CAR_dic", "DIC_mgL_sample", variable),
+                variable = ifelse(variable == "CAR_ch4", "CH4_umolL_sample", variable),
+                variable = ifelse(variable == "secchi", "Secchi_m_sample", variable),
+                depth_m = ifelse(depth_m == 0.0, 0.1, depth_m)) |>
+  dplyr::select(-pubDate,-forecast, -variable_type) |>
+  dplyr::mutate(parameter = as.character(parameter)) |>
+  dplyr::bind_rows(bloom_binary) |>
+  dplyr::bind_rows(ice_binary) |>
+  dplyr::bind_rows(mix_binary) |>
+  dplyr::filter(variable %in% vera_variables) |>
+  mutate(project_id = "vera4cast",
+         model_id = config$run_config$sim_name,
+         family = "ensemble",
+         site_id = "fcre",
+         duration = "P1D",
+         datetime = lubridate::as_datetime(datetime),
+         reference_datetime = lubridate::as_datetime(reference_datetime)) |>
+  filter(datetime >= reference_datetime)
+
+#vera4cast_df |>
+#  filter(depth_m == 1.6 | is.na(depth_m)) |>
+#  ggplot(aes(x = datetime, y = prediction, group = factor(parameter))) +
+#  geom_line() +
+#  facet_wrap(~variable, scale = "free")
+
+file_name <- paste0(config$run_config$sim_name,
+                    "-",
+                    lubridate::as_date(vera4cast_df$reference_datetime[1]),".csv.gz")
+
+readr::write_csv(vera4cast_df, file = file_name)
+
+
+
+#FLAREr::generate_forecast_score_arrow(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
+#                                      forecast_df = forecast_df,
+#                                      use_s3 = config$run_config$use_s3,
+#                                      bucket = config$s3$scores$bucket,
+#                                      endpoint = config$s3$scores$endpoint,
+#                                      local_directory = file.path(lake_directory, "scores/parquet"))
+
+#message("Generating plot")
+#FLAREr::plotting_general_2(file_name = saved_file,
+#                           target_file = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
+#                           ncore = 2,
+#                           obs_csv = FALSE)
+
+FLAREr::put_forecast(saved_file, eml_file_name = NULL, config)
+
+forecast_start_datetime <- lubridate::as_datetime(config$run_config$forecast_start_datetime) + lubridate::days(1)
+start_datetime <- lubridate::as_datetime(config$run_config$forecast_start_datetime)
+restart_file <- paste0(config$location$site_id,"-", (lubridate::as_date(forecast_start_datetime)- days(1)), "-",config$run_config$sim_name ,".nc")
+
+FLAREr::update_run_config2(lake_directory = lake_directory,
+                           configure_run_file = configure_run_file,
+                           restart_file = restart_file,
+                           start_datetime = start_datetime,
+                           end_datetime = NA,
+                           forecast_start_datetime = forecast_start_datetime,
+                           forecast_horizon = config$run_config$forecast_horizon,
+                           sim_name = config$run_config$sim_name,
+                           site_id = config$location$site_id,
+                           configure_flare = config$run_config$configure_flare,
+                           configure_obs = config$run_config$configure_obs,
+                           use_s3 = config$run_config$use_s3,
+                           bucket = config$s3$warm_start$bucket,
+                           endpoint = config$s3$warm_start$endpoint,
+                           use_https = TRUE)
+
+Sys.unsetenv("AWS_ACCESS_KEY_ID")
+Sys.unsetenv("AWS_SECRET_ACCESS_KEY")
+vera4castHelpers::submit(file_name, first_submission = FALSE)
+
+

@@ -35,7 +35,7 @@ nldas: fcre-manual-data/FCR_GLM_NLDAS_010113_123119_GMTadjusted.csv
 #specified_inflow1: .na #manual-data/FCR_weir_inflow_2013_2019_20200624_allfractions_2poolsDOC.csv
 inflow_raw_file1:
     - fcre-weir-data-qaqc/FCRWeir_L1.csv
-    - inflow_for_EDI_2013_10Jan2021.csv
+    - inflow_for_EDI_2013_10Jan2022.csv
 #specified_inflow2: .na #manual-data/FCR_wetland_inflow_2013_2019_20200713_allfractions_2DOCpools.csv
 #specified_outflow1: .na #manual-data/FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv
 
@@ -100,8 +100,8 @@ specified_outflow1: fcre-manual-data/FCR_spillway_outflow_SUMMED_WeirWetland_201
 insitu_obs_fname:
     - fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv
     - FCR_Catwalk_2018_2022.csv
-secchi_fname: Secchi_depth_2013-2020.csv
-ctd_fname: CTD_final_2013_2021.csv
+secchi_fname: Secchi_depth_2013-2022.csv
+ctd_fname: CTD_final_2013_2022.csv
 ch4_fname: Dissolved_CO2_CH4_Virginia_Reservoirs.csv
 silica_fname: silica_master_df.csv
 nutrients_fname: chemistry.csv
@@ -114,7 +114,7 @@ ctd_2_exo_sensor_chla: [0, 1]  #c(-2.0430, 2.5314) #c(-1.582, 1.335)
 ctd_2_exo_sensor_do: [0, 1] #c(-10.770, 1.061)
 exo_sensor_2_grab_sample_fdom: [-151.3407, 29.62654]
 focal_depths: .na #1.6
-maintenance_file: fcre-catwalk-data-qaqc/CAT_MaintenanceLog.txt
+maintenance_file: fcre-catwalk-data/CAT_MaintenanceLog.txt
 
 pull_from_git: TRUE
 

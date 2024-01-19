@@ -20,7 +20,7 @@ sss_fname: fcre-manual-data/FCR_SSS_inflow_2013_2020.csv
 noaa_location: FCRE
 
 met_raw_obs_fname:
-    - fcre-metstation-data-qaqc/FCRmet_L1.csv
+    - fcre-metstation-data/FCRmet_L1.csv
     - Met_final_2015_2022.csv
 #specified_metfile: .na #NA #paste0(manual_data_location, "/met_full_postQAQC.csv")
 
@@ -34,8 +34,8 @@ nldas: fcre-manual-data/FCR_GLM_NLDAS_010113_123119_GMTadjusted.csv
 
 #specified_inflow1: .na #manual-data/FCR_weir_inflow_2013_2019_20200624_allfractions_2poolsDOC.csv
 inflow_raw_file1:
-    - fcre-weir-data-qaqc/FCRWeir_L1.csv
-    - inflow_for_EDI_2013_10Jan2021.csv
+    - fcre-weir-data/FCRWeir_L1.csv
+    - inflow_for_EDI_2013_10Jan2022.csv
 #specified_inflow2: .na #manual-data/FCR_wetland_inflow_2013_2019_20200713_allfractions_2DOCpools.csv
 #specified_outflow1: .na #manual-data/FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv
 
@@ -89,16 +89,16 @@ depths_bins_top:
 
 obs_config_file: observations_config_ch4_dic.csv
 
-realtime_insitu_location: fcre-catwalk-data-qaqc
-realtime_met_station_location: fcre-metstation-data-qaqc
+realtime_insitu_location: fcre-catwalk-data
+realtime_met_station_location: fcre-metstation-data
 manual_data_location: fcre-manual-data
-realtime_inflow_data_location: fcre-weir-data-qaqc
+realtime_inflow_data_location: fcre-weir-data
 
 specified_inflow1: fcre-manual-data/FCR_weir_inflow_2013_2019_20200624_allfractions_2poolsDOC.csv
 specified_outflow1: fcre-manual-data/FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv
 
 insitu_obs_fname:
-    - fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv
+    - fcre-catwalk-data/fcre-waterquality_L1.csv
     - FCR_Catwalk_2018_2022.csv
 secchi_fname: Secchi_depth_2013-2020.csv
 ctd_fname: CTD_final_2013_2021.csv
@@ -114,7 +114,7 @@ ctd_2_exo_sensor_chla: [0, 1]  #c(-2.0430, 2.5314) #c(-1.582, 1.335)
 ctd_2_exo_sensor_do: [0, 1] #c(-10.770, 1.061)
 exo_sensor_2_grab_sample_fdom: [-151.3407, 29.62654]
 focal_depths: .na #1.6
-maintenance_file: fcre-catwalk-data-qaqc/CAT_MaintenanceLog.txt
+maintenance_file: fcre-catwalk-data/CAT_MaintenanceLog.txt
 
 pull_from_git: TRUE
 

@@ -42,28 +42,28 @@ FLAREr::get_git_repo(lake_directory,
 
 #' Download files from EDI
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/5/3d1866fecfb8e17dc902c76436239431",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/7/02d36541de9088f2dd99d79dc3a7a853",
                      file = config_obs$met_raw_obs_fname[2],
                      lake_directory)
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/5/c1b1f16b8e3edbbff15444824b65fe8f",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f",
                      file = config_obs$insitu_obs_fname[2],
                      lake_directory)
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/198/8/336d0a27c4ae396a75f4c07c01652985",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/198/11/81f396b3e910d3359907b7264e689052",
                      file = config_obs$secchi_fname,
                      lake_directory)
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/200/11/d771f5e9956304424c3bc0a39298a5ce",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/200/13/27ceda6bc7fdec2e7d79a6e4fe16ffdf",
                      file = config_obs$ctd_fname,
                      lake_directory)
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/199/8/da174082a3d924e989d3151924f9ef98",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/199/11/509f39850b6f95628d10889d66885b76",
                      file = config_obs$nutrients_fname,
                      lake_directory)
 
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/202/7/f5fa5de4b49bae8373f6e7c1773b026e",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/202/10/c065ff822e73c747f378efe47f5af12b",
                      file = config_obs$inflow_raw_file1[2],
                      lake_directory)
 
@@ -71,22 +71,29 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
                      file = "silica_master_df.csv",
                      lake_directory)
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/551/5/38d72673295864956cccd6bbba99a1a3",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/551/7/38d72673295864956cccd6bbba99a1a3",
                      file = "Dissolved_CO2_CH4_Virginia_Reservoirs.csv",
                      lake_directory)
 
 message("Clean up observed meterology")
 
-cleaned_met_file <- met_qaqc_csv(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
+cleaned_met_file <- met_data_bind(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
                                  qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
                                  cleaned_met_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id,paste0("observed-met_",config_obs$site_id,".csv")),
                                  input_file_tz = "EST",
                                  nldas = NULL,
                                  site_id = config_obs$site_id)
 
+# cleaned_met_file <- met_qaqc_csv(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
+#                                  qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
+#                                  cleaned_met_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id,paste0("observed-met_",config_obs$site_id,".csv")),
+#                                  input_file_tz = "EST",
+#                                  nldas = NULL,
+#                                  site_id = config_obs$site_id)
+
 message("Clean up observed inflow")
 
-cleaned_inflow_file <- inflow_qaqc_csv(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[1]),
+cleaned_inflow_file <- inflow_data_combine(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[1]),
                                        qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[2]),
                                        nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
                                        silica_file = file.path(config_obs$file_path$data_directory,  config_obs$silica_fname),

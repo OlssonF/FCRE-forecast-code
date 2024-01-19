@@ -35,7 +35,7 @@ forecast_inflows_outflows_arrow <- function(inflow_obs,
         stop("inflow forecast function needs bucket and endpoint if use_s3=TRUE")
       }
       vars <- FLAREr:::arrow_env_vars()
-      forecast_dir <- arrow::s3_bucket(bucket = file.path(met_bucket, "stage2/parquet", lubridate::hour(forecast_start_datetime), forecast_date),
+      forecast_dir <- arrow::s3_bucket(bucket = file.path(met_bucket, "stage2/parquet", lubridate::hour(forecast_start_datetime), forecast_date, site_id),
                                        endpoint_override =  met_endpoint)
       FLAREr:::unset_arrow_vars(vars)
     }else{
@@ -55,7 +55,8 @@ forecast_inflows_outflows_arrow <- function(inflow_obs,
       dplyr::select(datetime, parameter,variable,prediction) |>
       dplyr::collect() |>
       tidyr::pivot_wider(names_from = variable, values_from = prediction) |>
-      arrange(parameter, datetime)
+      arrange(parameter, datetime) |>
+      mutate(datetime = lubridate::as_datetime(datetime))
 
     ensemble_members <- unique(noaa_met$parameter)
 
@@ -71,7 +72,7 @@ forecast_inflows_outflows_arrow <- function(inflow_obs,
     run_dir <- file.path(inflow_model, lake_name_code, run_date, run_cycle)
 
     obs_met <- met %>%
-      dplyr::filter(datetime >= noaa_met$datetime[1] - lubridate::days(1) & datetime < noaa_met$datetime[1])
+      dplyr::filter(datetime >= lubridate::as_datetime(noaa_met$datetime[1]) - lubridate::days(1) & lubridate::as_datetime(datetime) < noaa_met$datetime[1])
 
     init_flow_temp <- inflow %>%
       dplyr::filter(datetime == lubridate::as_date(noaa_met$datetime[1]) - lubridate::days(1))
@@ -94,7 +95,7 @@ forecast_inflows_outflows_arrow <- function(inflow_obs,
         collect() |>
         dplyr::filter(model_id == "inflow-FLOWS-NOAAGEFS-AR1",
                       variable %in% c("FLOW", "TEMP"),
-                      datetime == previous_run_date) |>
+                      datetime == run_date) |>
         dplyr::select(parameter, variable, prediction) |>
         tidyr::pivot_wider(names_from = variable, values_from = prediction) |>
         dplyr::arrange(parameter)
@@ -109,6 +110,8 @@ forecast_inflows_outflows_arrow <- function(inflow_obs,
 
 
     d <- purrr::map_dfr(ensemble_members, function(ens, noaa_met, obs_met, init_flow, init_temp){
+
+      print(ens)
       df <- noaa_met |>
         dplyr::filter(parameter == ens) |>
         dplyr::select(-parameter) |>
