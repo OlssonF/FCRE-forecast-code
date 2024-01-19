@@ -30,10 +30,11 @@ if (DA_use == F) {
 
 config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
 
-
-source('01_generate_targets.R')
+# Generate targets
+source(file.path(lake_directory, 'workflows', config_set_name, 'generate_targets.R'))
 message("Successfully generated targets")
 
+#' Move targets to s3 bucket
 FLAREr::put_targets(site_id =  config$location$site_id,
                     cleaned_insitu_file = cleaned_insitu_file,
                     cleaned_met_file = NA,

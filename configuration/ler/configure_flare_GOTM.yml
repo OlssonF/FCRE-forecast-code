@@ -40,6 +40,7 @@ da_setup:
     no_negative_states: TRUE
     assimilate_first_step: FALSE
     use_obs_constraint: TRUE
+    obs_filename: fcre-targets-insitu.csv
 model_settings:
    ncore: 6
    model: GOTM #other is "null"
@@ -74,7 +75,9 @@ inflow:
    forecast_inflow_model: inflow/FLOWS-NOAAGEFS-AR1
 met:
    use_forecasted_met: TRUE
+   use_observed_met: FALSE
    forecast_met_model: noaa/NOAAGEFS_1hr
+   forecast_lag_days: 1
 uncertainty:
    observation: TRUE
    process: TRUE
