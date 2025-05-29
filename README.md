@@ -1,6 +1,8 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10679591.svg)](https://doi.org/10.5281/zenodo.10679591)
+
 # FCRE-forecast-code
 
-This code reproduces figures from the Falling Creek Reservoir multi-model ensemble forecasting research using baseline forecasts and the FLARE (Forecasting Lake And Reservoir Ecosystems) system in the manuscript by Olsson et al. titled "TBD" If you have any questions, contact Freya Olsson at freyao\@vt.edu
+This code reproduces figures from the Falling Creek Reservoir multi-model ensemble forecasting research using baseline forecasts and the FLARE (Forecasting Lake And Reservoir Ecosystems) system in the manuscript by Olsson et al. titled "A Multi‐Model Ensemble of Baseline and Process‐Based Models Improves the Predictive Skill of Near‐Term Lake Forecasts" If you have any questions, contact Freya Olsson at freyao\@vt.edu
 
 # Instructions to reproduce manuscript + SI figures:
 
